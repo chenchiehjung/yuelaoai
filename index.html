@@ -1165,12 +1165,12 @@ body::before {
       </p>
       <div class="detail-cta-steps">
         <div class="cta-step"><span class="cta-step-num">1</span>截圖此頁</div>
-        <div class="cta-step"><span class="cta-step-num">2</span>回官方LINE</div>
+        <div class="cta-step"><span class="cta-step-num">2</span>加入官方LINE</div>
         <div class="cta-step"><span class="cta-step-num">3</span>傳送截圖</div>
       </div>
       <a href="https://lin.ee/n2N8qhh" target="_blank" class="line-btn">
         <span class="line-icon">L</span>
-        <span>回 到 官 方 L I N E</span>
+        <span>加 入 官 方 L I N E</span>
       </a>
     </div>
     
@@ -1206,18 +1206,18 @@ body::before {
       <span class="detail-cta-badge">♡ 想 知 道 更 多 ♡</span>
       <div class="detail-cta-title">想得到詳細解籤嗎？</div>
       <p class="detail-cta-desc">
-        回到官方 <span class="em">LINE</span> 並截圖此畫面<br>
+        加入官方 <span class="em">LINE</span> 並截圖此畫面<br>
         老師將為您 <span class="em">一對一深入解析籤詩</span><br>
         指引您的姻緣方向 ♡
       </p>
       <div class="detail-cta-steps">
         <div class="cta-step"><span class="cta-step-num">1</span>截圖此頁</div>
-        <div class="cta-step"><span class="cta-step-num">2</span>回官方LINE</div>
+        <div class="cta-step"><span class="cta-step-num">2</span>加入官方LINE</div>
         <div class="cta-step"><span class="cta-step-num">3</span>傳送截圖</div>
       </div>
       <a href="https://lin.ee/n2N8qhh" target="_blank" class="line-btn">
         <span class="line-icon">L</span>
-        <span>回 到 官 方 L I N E</span>
+        <span>加 入 官 方 L I N E</span>
       </a>
     </div>
 
@@ -1487,18 +1487,28 @@ function enterTossScreen() {
   document.getElementById('displayBirthday').textContent = userData.birthday;
   document.getElementById('displayQuestion').textContent = userData.question;
 
-  // 進入擲筊畫面時,讓所有輸入欄位失去焦點
-  // 避免 iOS 把搖晃判定為「搖一搖以撤銷輸入」
+  // 進入擲筊畫面時,徹底清除 iOS 的文字 undo stack
+  // 避免使用者搖手機擲筊時跳出「還原輸入 / 取消」對話框
   if (document.activeElement && document.activeElement.blur) {
     document.activeElement.blur();
   }
-  document.querySelectorAll('input, textarea, select').forEach(function(el) {
-    el.blur();
-    // 把欄位設為 readonly,防止 iOS 仍判定它們為輸入狀態
-    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+  // 把所有 text/textarea 的值清空、改成 hidden 類型,iOS 就不會再追蹤它們
+  document.querySelectorAll('input, textarea').forEach(function(el) {
+    try { el.blur(); } catch(e) {}
+    try { el.value = ''; } catch(e) {}
+    if (el.tagName === 'INPUT') {
+      // 改成 hidden type → iOS 完全不再把它視為輸入欄,undo stack 即被釋放
+      try { el.type = 'hidden'; } catch(e) {}
+    } else {
       el.setAttribute('readonly', 'readonly');
+      el.style.display = 'none';
     }
   });
+  document.querySelectorAll('select').forEach(function(el) {
+    try { el.blur(); } catch(e) {}
+  });
+  // 把整個表單畫面從文件流移除 (display:none 已經會做),雙保險
+  document.body.setAttribute('data-tossing', '1');
 
   questionScreen.style.display = 'none';
   tossScreen.classList.add('active');
