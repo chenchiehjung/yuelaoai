@@ -2756,8 +2756,9 @@ async function doToss() {
     // 累加失敗輪次計數 (這次「未能達成三聖筊」算一輪失敗)
     consecutiveFail++;
     
-    // 第 5 輪失敗 → 跳月老阻礙彈窗 (流程結束)
-    if (consecutiveFail >= 5) {
+    // 第 6 輪失敗 → 跳月老阻礙彈窗 (流程結束)
+    // 註:拜拜儀式(第4輪)後 必須再擲一次杯 那次失敗的「月老未允」看完才會跳此畫面
+    if (consecutiveFail >= 6) {
       isFinished = true;
       manualToss.disabled = true;
       cupHint.innerHTML = '<span class="highlight">緣分尚未具足 ♡</span>';
@@ -2775,7 +2776,7 @@ async function doToss() {
       startBowDetection();  // 啟動彎腰偵測
       document.getElementById('bowModal').classList.add('show');
     }
-    // 第 1 或第 3 輪失敗 → 一般失敗彈窗
+    // 第 1、3、5 輪失敗 → 月老未允彈窗 (第5次=拜完儀式後再擲一次的失敗)
     else {
       prayPopup.classList.add('show');
     }
@@ -2968,10 +2969,16 @@ let bowDetecting = false;
 let bowInitialBeta = null;
 let bowMaxAngle = 0;
 let bowOrientHandler = null;
+let bowState = 'up';
+let bowCount = 0;
+let lastBowTime = 0;
 
 function startBowDetection() {
   bowMaxAngle = 0;
   bowInitialBeta = null;
+  bowState = 'up';      // 鞠躬狀態機: 'up' 站立 / 'down' 鞠躬中
+  bowCount = 0;         // 完成的鞠躬次數
+  lastBowTime = 0;      // 上一次完成鞠躬的時間戳(防抖用)
   
   // 重置 UI
   const fillEl = document.getElementById('bowFill');
@@ -3001,14 +3008,12 @@ function startBowDetection() {
       // 計算向前傾斜角度
       const tilt = beta - bowInitialBeta;
       
-      // === 圖片動畫:幅度大很多!! ===
-      // 旋轉:tilt * 2.5 (之前 0.6),最多 70 度 (之前 30)
-      // 也加上向下平移 + 縮小 模擬鞠躬遠離螢幕的感覺
-      const tiltClamp = Math.max(0, Math.min(40, tilt));  // tilt 取 0-40 範圍
-      const imgRotate = tiltClamp * 2;        // 0-80 度旋轉
-      const imgTranslate = tiltClamp * 1.5;   // 0-60px 向下移
-      const imgScale = 1 - (tiltClamp * 0.008);  // 1.0 → 0.68 縮小(模擬鞠躬遠離)
-      const imgOpacity = 1 - (tiltClamp * 0.005);  // 微微淡出
+      // === 圖片動畫:最大旋轉 30 度(用戶要求) ===
+      const tiltClamp = Math.max(0, Math.min(30, tilt));  // tilt 取 0-30 範圍
+      const imgRotate = tiltClamp;            // 1:1 旋轉,最多 30 度
+      const imgTranslate = tiltClamp * 0.8;   // 0-24px 向下移
+      const imgScale = 1 - (tiltClamp * 0.005);  // 微微縮小
+      const imgOpacity = 1 - (tiltClamp * 0.003);
       
       if (imgEl) {
         imgEl.style.transform = 
@@ -3016,24 +3021,48 @@ function startBowDetection() {
         imgEl.style.opacity = imgOpacity;
       }
       
-      // === 進度條:門檻大幅降低 ===
-      // 之前 50 度 → 現在 20 度就完成 (簡單很多)
-      const targetAngle = 20;
-      if (tilt > bowMaxAngle) bowMaxAngle = tilt;
-      const progress = Math.max(0, Math.min(100, (bowMaxAngle / targetAngle) * 100));
-      if (fillEl) fillEl.style.width = progress + '%';
+      // === 進度條:離散計次模式 — 一個鞠躬週期(下→上)才推進一段 ===
+      const TOTAL_BOWS = 3;          // 共拜 3 次
+      const DOWN_THRESHOLD = 18;     // 傾斜 ≥18° 才算「鞠躬到位」
+      const UP_THRESHOLD = 6;        // 傾斜 ≤6° 才算「站起回正」
+      const COOLDOWN_MS = 600;       // 完成一次後的防抖時間
+      const now = Date.now();
       
-      // 即時提示
-      if (hintEl) {
-        if (progress < 25) {
-          hintEl.textContent = '請慢慢將手機向前傾...';
-        } else if (progress < 60) {
-          hintEl.textContent = '很好 ♡ 默念您所求之事';
-        } else if (progress < 100) {
-          hintEl.textContent = '快完成了 再多一些 ♡';
-        } else {
-          hintEl.innerHTML = '<span style="color:var(--gold);font-weight:700;">虔心已達 ✦ 真誠已上達月老</span>';
+      // 進入「鞠躬到位」狀態 (從上→下)
+      if (bowState === 'up' && tilt > DOWN_THRESHOLD && (now - lastBowTime > COOLDOWN_MS)) {
+        bowState = 'down';
+      }
+      // 從「鞠躬到位」回到「站起」= 完成一次完整鞠躬
+      else if (bowState === 'down' && tilt < UP_THRESHOLD) {
+        bowState = 'up';
+        bowCount++;
+        lastBowTime = now;
+        
+        // 震動回饋(若裝置支援)
+        try { if (navigator.vibrate) navigator.vibrate(80); } catch(e) {}
+        
+        // 更新進度條
+        const progress = Math.min(100, (bowCount / TOTAL_BOWS) * 100);
+        if (fillEl) fillEl.style.width = progress + '%';
+        
+        if (bowCount >= TOTAL_BOWS) {
+          if (hintEl) hintEl.innerHTML = '<span style="color:var(--gold);font-weight:700;">虔心已達 ✦ 真誠已上達月老</span>';
+          // 完成後加長震動 (3 短脈衝)
+          try { if (navigator.vibrate) navigator.vibrate([100, 60, 100, 60, 200]); } catch(e) {}
+          bowDetecting = false;  // 防止重複觸發
           setTimeout(closeBowModal, 1500);
+        } else {
+          if (hintEl) hintEl.textContent = '已拜 ' + bowCount + ' / ' + TOTAL_BOWS + ' ♡ 請繼續';
+        }
+      }
+      // 引導文案(尚未完成第一拜時)
+      else if (bowCount === 0 && hintEl) {
+        if (tilt < 5) {
+          hintEl.textContent = '請慢慢將手機向前傾...';
+        } else if (tilt < DOWN_THRESHOLD) {
+          hintEl.textContent = '再多一點 ♡ 默念您所求之事';
+        } else if (bowState === 'down') {
+          hintEl.textContent = '很好 ♡ 請慢慢起身';
         }
       }
     };
