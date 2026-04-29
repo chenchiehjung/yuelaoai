@@ -1386,71 +1386,55 @@ body::before {
       <span style="font-size:0.85rem; color:var(--text-light); font-weight:500;">每 一 拜 都 在 心 中 默 念 您 所 求 之 事</span>
     </p>
 
-    <!-- 引導示意圖:側面人形拿手機 站立 → 鞠躬 → 起身 -->
+    <!-- 引導示意圖:極簡人形剪影 — 站直 → 鞠躬 → 站直 -->
     <div class="bow-guide">
       <div class="bow-guide-step">
-        <!-- ① 直立:人拿著手機站直 -->
+        <!-- ① 站直 -->
         <div class="bow-guide-icon-wrap">
           <svg class="bow-guide-person" viewBox="0 0 60 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <!-- 頭 -->
-            <circle cx="30" cy="14" r="7.5" fill="#fff5f8" stroke="#e91e63" stroke-width="2.2"/>
-            <!-- 身體 (垂直) -->
-            <line x1="30" y1="22" x2="30" y2="55" stroke="#e91e63" stroke-width="3.5" stroke-linecap="round"/>
-            <!-- 雙手拿手機 (放在身體前方) -->
-            <line x1="30" y1="32" x2="22" y2="44" stroke="#e91e63" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="30" y1="32" x2="38" y2="44" stroke="#e91e63" stroke-width="2.5" stroke-linecap="round"/>
-            <!-- 手機 -->
-            <rect x="22" y="40" width="16" height="14" rx="2" fill="#fff" stroke="#e91e63" stroke-width="2"/>
-            <rect x="24" y="42" width="12" height="10" rx="1" fill="#ffe4ec"/>
-            <!-- 腿 -->
-            <line x1="30" y1="55" x2="22" y2="80" stroke="#e91e63" stroke-width="3.5" stroke-linecap="round"/>
-            <line x1="30" y1="55" x2="38" y2="80" stroke="#e91e63" stroke-width="3.5" stroke-linecap="round"/>
+            <g fill="var(--rose)" opacity="0.55">
+              <circle cx="30" cy="14" r="10"/>
+              <rect x="20" y="26" width="20" height="32" rx="9"/>
+              <rect x="22" y="56" width="6" height="28" rx="3"/>
+              <rect x="32" y="56" width="6" height="28" rx="3"/>
+            </g>
           </svg>
           <span class="bow-guide-label">① 站 直</span>
         </div>
         <div class="bow-guide-arrow">→</div>
         
-        <!-- ② 鞠躬:人向前彎腰拿著手機 -->
+        <!-- ② 鞠躬 -->
         <div class="bow-guide-icon-wrap">
-          <svg class="bow-guide-person bow-active" viewBox="0 0 80 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <!-- 頭 (彎腰時往前下方) -->
-            <circle cx="48" cy="34" r="7.5" fill="#fff5f8" stroke="#e91e63" stroke-width="2.2"/>
-            <!-- 身體 (從臀部往前傾) -->
-            <line x1="28" y1="58" x2="46" y2="38" stroke="#e91e63" stroke-width="3.5" stroke-linecap="round"/>
-            <!-- 雙手向前向下 -->
-            <line x1="40" y1="44" x2="50" y2="56" stroke="#e91e63" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="40" y1="44" x2="58" y2="50" stroke="#e91e63" stroke-width="2.5" stroke-linecap="round"/>
-            <!-- 手機 (跟著轉) -->
-            <rect x="48" y="48" width="16" height="14" rx="2" fill="#fff" stroke="#e91e63" stroke-width="2" transform="rotate(45 56 55)"/>
-            <!-- 腿 (站著) -->
-            <line x1="28" y1="58" x2="22" y2="82" stroke="#e91e63" stroke-width="3.5" stroke-linecap="round"/>
-            <line x1="28" y1="58" x2="34" y2="82" stroke="#e91e63" stroke-width="3.5" stroke-linecap="round"/>
-            <!-- 鞠躬箭頭弧線 -->
-            <path d="M 22 18 Q 8 32 14 58" stroke="#f5b942" stroke-width="2" fill="none" stroke-dasharray="3 3" opacity="0.8"/>
-            <path d="M 10 50 L 14 58 L 20 54" stroke="#f5b942" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg class="bow-guide-person" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <g fill="var(--rose)" opacity="0.55">
+              <!-- 腿直立 -->
+              <rect x="32" y="54" width="6" height="30" rx="3"/>
+              <rect x="42" y="54" width="6" height="30" rx="3"/>
+              <!-- 上半身往前彎 50 度 (從腰部彎) -->
+              <g transform="rotate(55 40 56)">
+                <circle cx="40" cy="14" r="10"/>
+                <rect x="30" y="26" width="20" height="32" rx="9"/>
+              </g>
+            </g>
+            <!-- 鞠躬箭頭 -->
+            <path d="M 14 20 Q 4 38 18 56" stroke="var(--gold)" stroke-width="2.5" fill="none" stroke-dasharray="4 3" opacity="0.9" stroke-linecap="round"/>
+            <path d="M 12 50 L 18 56 L 24 52" stroke="var(--gold)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span class="bow-guide-label">② 鞠 躬</span>
         </div>
         <div class="bow-guide-arrow">→</div>
         
-        <!-- ③ 起身:回到站直 -->
+        <!-- ③ 站直起身 -->
         <div class="bow-guide-icon-wrap">
           <svg class="bow-guide-person" viewBox="0 0 60 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <!-- 頭 -->
-            <circle cx="30" cy="14" r="7.5" fill="#fff5f8" stroke="#e91e63" stroke-width="2.2"/>
-            <!-- 身體 -->
-            <line x1="30" y1="22" x2="30" y2="55" stroke="#e91e63" stroke-width="3.5" stroke-linecap="round"/>
-            <!-- 手 -->
-            <line x1="30" y1="32" x2="22" y2="44" stroke="#e91e63" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="30" y1="32" x2="38" y2="44" stroke="#e91e63" stroke-width="2.5" stroke-linecap="round"/>
-            <!-- 手機 -->
-            <rect x="22" y="40" width="16" height="14" rx="2" fill="#fff" stroke="#e91e63" stroke-width="2"/>
-            <rect x="24" y="42" width="12" height="10" rx="1" fill="#ffe4ec"/>
-            <!-- 腿 -->
-            <line x1="30" y1="55" x2="22" y2="80" stroke="#e91e63" stroke-width="3.5" stroke-linecap="round"/>
-            <line x1="30" y1="55" x2="38" y2="80" stroke="#e91e63" stroke-width="3.5" stroke-linecap="round"/>
+            <g fill="var(--rose)" opacity="0.55">
+              <circle cx="30" cy="14" r="10"/>
+              <rect x="20" y="26" width="20" height="32" rx="9"/>
+              <rect x="22" y="56" width="6" height="28" rx="3"/>
+              <rect x="32" y="56" width="6" height="28" rx="3"/>
+            </g>
             <!-- 起身向上箭頭 -->
-            <path d="M 50 60 Q 56 40 52 18" stroke="#06C755" stroke-width="2" fill="none" stroke-dasharray="3 3" opacity="0.7"/>
+            <path d="M 50 64 Q 56 42 52 18" stroke="#06C755" stroke-width="2.5" fill="none" stroke-dasharray="4 3" opacity="0.9" stroke-linecap="round"/>
             <path d="M 47 22 L 52 14 L 57 22" stroke="#06C755" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span class="bow-guide-label">③ 起 身</span>
