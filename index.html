@@ -29,7 +29,7 @@ body {
     radial-gradient(circle at 50% 50%, rgba(255, 217, 125, 0.15), transparent 60%),
     linear-gradient(180deg, #fff5f8 0%, #ffe4ed 50%, #ffd6e3 100%);
   background-attachment: fixed;
-  min-height: 100vh; color: var(--text);
+  min-height: 100vh; min-height: 100dvh; color: var(--text);
   overflow-x: hidden; position: relative;
   -webkit-text-size-adjust: 100%;
 }
@@ -55,7 +55,8 @@ body::before {
   100% { transform: translateY(110vh) translateX(-30px) rotate(360deg); opacity: 0; }
 }
 .container {
-  position: relative; z-index: 10; min-height: 100vh;
+  position: relative; z-index: 10; min-height: 100vh; min-height: 100dvh;
+  padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px));
   display: flex; flex-direction: column; align-items: center;
   padding: 30px 20px 50px;
 }
@@ -337,6 +338,8 @@ body::before {
 }
 .manual-toss:disabled { opacity: 0.5; cursor: not-allowed; }
 .popup-overlay {
+  /* 手機底部 URL bar 安全邊距 */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   position: fixed; inset: 0;
   background: rgba(255, 200, 220, 0.85);
   -webkit-backdrop-filter: blur(10px);
@@ -1090,11 +1093,11 @@ body::before {
   text-align: center;
 }
 .bow-progress-label {
-  font-size: 0.78rem;
-  color: var(--text-light);
-  letter-spacing: 0.25em;
-  margin-bottom: 6px;
-  font-weight: 500;
+  font-size: 1rem;
+  color: var(--rose-deep);
+  letter-spacing: 0.2em;
+  margin-bottom: 8px;
+  font-weight: 800;
 }
 .bow-progress-bar {
   width: 80%;
@@ -1114,12 +1117,16 @@ body::before {
   box-shadow: 0 0 8px rgba(245, 185, 66, 0.4);
 }
 .bow-progress-hint {
-  margin-top: 8px;
-  font-size: 0.85rem;
+  margin-top: 12px;
+  font-size: 1rem;
   color: var(--rose);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  min-height: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  min-height: 28px;
+  padding: 8px 12px;
+  background: rgba(255, 245, 248, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(233, 30, 99, 0.15);
 }
 
 /* === 拜拜引導示意圖 === */
@@ -1160,10 +1167,10 @@ body::before {
   100% { transform: rotate(0deg); }
 }
 .bow-guide-label {
-  font-size: 0.7rem;
-  color: var(--text-light);
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-size: 0.85rem;
+  color: var(--rose-deep);
+  font-weight: 800;
+  letter-spacing: 0.12em;
   white-space: nowrap;
 }
 .bow-guide-arrow {
@@ -1175,11 +1182,17 @@ body::before {
 }
 .bow-guide-cycle {
   text-align: center;
-  font-size: 0.72rem;
-  color: var(--rose);
-  margin-top: 8px;
-  letter-spacing: 0.15em;
-  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--rose-deep);
+  margin-top: 10px;
+  letter-spacing: 0.18em;
+  font-weight: 800;
+  background: rgba(245, 185, 66, 0.15);
+  padding: 6px 12px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-left: 50%;
+  transform: translateX(-50%);
 }
 
 </style>
@@ -1332,13 +1345,14 @@ body::before {
     <button class="incense-btn" id="incenseBtn">已 誠 心 祈 求 ♡</button>
   </div>
 </div>
-<!-- 第4次失敗:拜拜彎腰互動畫面 -->
+<!-- 拜拜彎腰互動畫面 -->
 <div class="popup-overlay" id="bowModal">
-  <div class="popup-card" style="max-width:400px;">
-    <h3 class="popup-title" style="margin-bottom:6px;">虔 心 祈 求 月 老</h3>
-    <p class="popup-desc" style="font-size:0.85rem; margin-bottom:10px; line-height:1.7;">
+  <div class="popup-card" style="max-width:420px;">
+    <h3 class="popup-title" style="margin-bottom:10px; font-size:1.5rem;">虔 心 祈 求 月 老</h3>
+    <p class="popup-desc" style="font-size:1.05rem; margin-bottom:14px; line-height:1.8; font-weight:600;">
       手 持 手 機 <span class="em">向 前 鞠 躬 三 次</span><br>
-      <span style="font-size:0.78rem; color:var(--text-light);">每 一 拜 都 在 心 中 默 念 您 所 求 之 事</span>
+      <span style="font-size:0.9rem; color:var(--rose); font-weight:700;">⚠️ 拜 完 起 身 才 算 一 次</span><br>
+      <span style="font-size:0.85rem; color:var(--text-light); font-weight:500;">每 一 拜 都 在 心 中 默 念 您 所 求 之 事</span>
     </p>
 
     <!-- 引導示意圖:手機從直立 → 向前傾的動畫 -->
@@ -1403,7 +1417,7 @@ body::before {
       </div>
     </div>
     
-    <button class="popup-btn" id="bowSkipBtn" style="margin-top:10px;">略 過 儀 式 ♡</button>
+    <button class="popup-btn" id="bowSkipBtn" style="margin-top:14px; font-size:1rem; padding:14px;">略 過 儀 式 ♡</button>
   </div>
 </div>
 
@@ -1536,10 +1550,10 @@ body::before {
 // =============================================
 // 後台埋點 + 客戶資料儲存
 // =============================================
-// 使用 Supabase (PostgreSQL，免費方案)
-// publishable key 是公開金鑰，搭配 RLS policy 限制只能 insert
-const SUPABASE_URL = 'https://dnwsieglvajittndswqc.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_oCGGG6nzm5mUJeYwhiru9g_59QaPxR3';
+// 使用 KVdb.io 匿名雲端儲存 (不需任何帳號 完全免費)
+// bucket 名稱是隨機產生的 從外面猜不到
+const KVDB_BUCKET = 'yuelao-mgmt-buoScZ3xFMaXF7zSwLnB';
+const KVDB_BASE   = 'https://kvdb.io/' + KVDB_BUCKET;
 
 const __sessionStart = Date.now();
 const __sessionData = {
@@ -1558,46 +1572,44 @@ function trackEvent(name, params) {
   __sessionEvents.push({ name: name, t: Date.now() - __sessionStart, params: params || {} });
 }
 
-// 把整筆 session 寫入 Supabase customer_records 表
-// (Supabase 需要自訂 headers，所以不能用 sendBeacon；改用 fetch + keepalive)
+// 把整筆 session 寫入 KVdb (一次寫一個 key)
 let __sheetsSent = false;
 function sendSessionToSheets(reason) {
   if (!__sessionData.questionSubmitted) return;
   if (__sheetsSent && reason !== 'final-update') return;
   __sheetsSent = true;
 
-  // 注意：Supabase 欄位是 snake_case
   const payload = {
     timestamp: new Date().toISOString(),
     name: (typeof userData !== 'undefined' && userData.name) || '',
     birthday: (typeof userData !== 'undefined' && userData.birthday) || '',
     question: (typeof userData !== 'undefined' && userData.question) || '',
-    final_result: __sessionData.finalResult || 'abandoned',
-    final_grade: __sessionData.finalGrade || '',
+    finalResult: __sessionData.finalResult || 'abandoned',
+    finalGrade: __sessionData.finalGrade || '',
     attempts: __sessionData.attempts,
-    duration_seconds: Math.floor((Date.now() - __sessionStart) / 1000),
+    durationSeconds: Math.floor((Date.now() - __sessionStart) / 1000),
     shared: __sessionData.shared,
-    line_clicked: __sessionData.lineClicked,
-    history_json: JSON.stringify(__sessionData.history),
-    events_json: JSON.stringify(__sessionEvents),
+    lineClicked: __sessionData.lineClicked,
+    historyJson: JSON.stringify(__sessionData.history),
+    eventsJson: JSON.stringify(__sessionEvents),
     referrer: document.referrer || '',
-    user_agent: navigator.userAgent || '',
+    userAgent: navigator.userAgent || '',
     reason: reason || ''
   };
 
-  const url = SUPABASE_URL + '/rest/v1/customer_records';
+  // 用時間戳當 key prefix 確保排序一致
+  const key = 'r-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  const url = KVDB_BASE + '/' + key;
+
   try {
-    fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      keepalive: true
-    }).catch(function() {});
+    const data = JSON.stringify(payload);
+    const blob = new Blob([data], { type: 'application/json;charset=utf-8' });
+    // sendBeacon 是 POST,KVdb 接受 POST 來建立新 key
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(url, blob);
+    } else {
+      fetch(url, { method: 'POST', body: data, headers: {'Content-Type':'application/json'}, keepalive: true, mode: 'no-cors' });
+    }
   } catch(e) {}
 }
 
@@ -3243,8 +3255,9 @@ async function doToss() {
 
   const r = Math.random();
   let result;
-  if (r < 0.5) result = 'sheng';
-  else if (r < 0.75) result = 'xiao';
+  // 機率: 聖筊 65% / 笑筊 20% / 陰筊 15%
+  if (r < 0.65) result = 'sheng';
+  else if (r < 0.85) result = 'xiao';
   else result = 'yin';
 
   cup1.classList.remove('flat');
@@ -3321,9 +3334,11 @@ async function doToss() {
     // 累加失敗輪次計數 (這次「未能達成三聖筊」算一輪失敗)
     consecutiveFail++;
     
-    // 第 6 輪失敗 → 跳月老阻礙彈窗 (流程結束)
-    // 註:拜拜儀式(第4輪)後 必須再擲一次杯 那次失敗的「月老未允」看完才會跳此畫面
-    if (consecutiveFail >= 6) {
+    // 新流程:
+    //  第 1 輪失敗 → prayPopup (按下後接香爐)
+    //  第 2 輪失敗 → prayPopup (按下後接拜拜)
+    //  第 3 輪失敗 → 直接月老阻礙
+    if (consecutiveFail >= 3) {
       isFinished = true;
       manualToss.disabled = true;
       cupHint.innerHTML = '<span class="highlight">緣分尚未具足 ♡</span>';
@@ -3333,19 +3348,10 @@ async function doToss() {
       trackEvent('blocked', { attempts: __sessionData.attempts });
       sendSessionToSheets('blocked');
     }
-    // 第 2 輪失敗 → 跳香爐祈求
-    else if (consecutiveFail === 2) {
-      const msgEl = document.getElementById('incenseMessage');
-      msgEl.innerHTML = '已連續兩輪 <span class="em">未能連得三聖筊</span><br>月老希望您 <span class="em">先靜下心</span><br>雙手合十 <span class="em">默念三次</span> 您所求之事<br>讓真誠隨香煙上達月老';
-      document.getElementById('incenseModal').classList.add('show');
-    }
-    // 第 4 輪失敗 → 跳拜拜彎腰互動 (彎腰偵測)
-    else if (consecutiveFail === 4) {
-      startBowDetection();  // 啟動彎腰偵測
-      document.getElementById('bowModal').classList.add('show');
-    }
-    // 第 1、3、5 輪失敗 → 月老未允彈窗 (第5次=拜完儀式後再擲一次的失敗)
     else {
+      // 第 1 / 第 2 輪都先顯示 prayPopup,按下「再擲」後依輪次接下一階段
+      // 用 dataset 標記當前是第幾輪,給 prayBtn handler 用
+      prayPopup.dataset.round = consecutiveFail;  // 1 或 2
       prayPopup.classList.add('show');
     }
     isTossing = false;
@@ -3434,8 +3440,27 @@ document.getElementById('prayBtn').addEventListener('click', function() {
   cupResult.textContent = '';
   cup1.classList.remove('flat');
   cup2.classList.remove('flat');
-  cupHint.innerHTML = '<span class="highlight">請誠心祈求 重新擲筊 ♡</span>';
-  manualToss.disabled = false;
+  
+  const round = parseInt(prayPopup.dataset.round || '0', 10);
+  
+  if (round === 1) {
+    // 第 1 輪失敗的講解看完 → 進入香爐祈求
+    setTimeout(function() {
+      const msgEl = document.getElementById('incenseMessage');
+      msgEl.innerHTML = '請靜下心 <span class="em">先敬一炷香</span><br>雙手合十 <span class="em">默念三次</span> 您所求之事<br>讓真誠隨香煙上達月老';
+      document.getElementById('incenseModal').classList.add('show');
+    }, 200);
+  } else if (round === 2) {
+    // 第 2 輪失敗的講解看完 → 進入拜拜彎腰
+    setTimeout(function() {
+      startBowDetection();
+      document.getElementById('bowModal').classList.add('show');
+    }, 200);
+  } else {
+    // 其他情況(理論上不會發生) → 重新擲筊
+    cupHint.innerHTML = '<span class="highlight">請誠心祈求 重新擲筊 ♡</span>';
+    manualToss.disabled = false;
+  }
 });
 
 // 香爐祈求完按鈕
@@ -3751,28 +3776,28 @@ function startBowDetection() {
         if (labelEl2) labelEl2.textContent = '鞠 躬 進 度 ‧ ' + bowCount + ' / ' + TOTAL_BOWS;
         
         if (bowCount >= TOTAL_BOWS) {
-          if (hintEl) hintEl.innerHTML = '<span style="color:var(--gold);font-weight:700;">三 拜 已 達 ✦ 真 誠 已 上 達 月 老</span>';
+          if (hintEl) hintEl.innerHTML = '<span style="color:var(--gold);font-weight:800;font-size:1.1rem;">✨ 三 拜 已 達 ✦ 真 誠 已 上 達 月 老 ✨</span>';
           // 完成後加長震動 (3 短脈衝)
           try { if (navigator.vibrate) navigator.vibrate([100, 60, 100, 60, 200]); } catch(e) {}
           bowDetecting = false;  // 防止重複觸發
           setTimeout(closeBowModal, 1500);
         } else {
           const remaining = TOTAL_BOWS - bowCount;
-          if (hintEl) hintEl.innerHTML = '完 成 第 <span style="color:var(--gold);">' + bowCount + '</span> 拜 ♡ 還 差 <span style="color:var(--rose);">' + remaining + '</span> 拜';
+          if (hintEl) hintEl.innerHTML = '🌸 <strong>完 成 第 <span style="color:var(--gold);font-size:1.15rem;">' + bowCount + '</span> 拜</strong> 🌸<br>還 差 <span style="color:var(--rose);font-size:1.15rem;font-weight:800;">' + remaining + '</span> 拜';
         }
       }
-      // 引導文案(動態提示)
+      // 引導文案(動態提示) — 文字更大、更明確
       else if (hintEl) {
         if (bowCount === 0) {
           if (tilt < 5) {
-            hintEl.textContent = '① 請手持手機 緩緩向前鞠躬';
+            hintEl.innerHTML = '👇 <strong>請手持手機 慢慢向前鞠躬</strong> 👇';
           } else if (tilt < DOWN_THRESHOLD) {
-            hintEl.textContent = '繼 續 向 前 傾 ♡ 默 念 心 願';
+            hintEl.innerHTML = '⏬ <strong>再 多 傾 一 點</strong> ⏬<br><span style="font-size:0.82rem;">默 念 您 心 中 所 求</span>';
           } else if (bowState === 'down') {
-            hintEl.textContent = '② 很 好 ♡ 請 慢 慢 起 身';
+            hintEl.innerHTML = '✅ <strong>很 好</strong> ✅<br>👆 <span style="color:var(--gold);font-weight:800;">現 在 慢 慢 把 手 機 拿 起 來</span> 👆';
           }
         } else if (bowState === 'down') {
-          hintEl.textContent = '② 起 身 才 算 完 成 一 拜 ♡';
+          hintEl.innerHTML = '👆 <strong style="color:var(--gold);">把 手 機 拿 起 來 才 算 一 次</strong> 👆';
         }
       }
     };
