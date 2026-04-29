@@ -522,11 +522,12 @@ body::before {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(6, 199, 85, 0.5);
 }
-.line-icon {
-  width: 22px; height: 22px;
-  background: white; border-radius: 6px;
-  display: inline-flex; align-items: center; justify-content: center;
-  color: var(--line); font-size: 0.78rem; font-weight: 900;
+.line-icon-svg {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 .poem-close {
   margin-top: 14px; width: 100%; padding: 12px;
@@ -922,6 +923,66 @@ body::before {
   min-height: 22px;
 }
 
+/* === 拜拜引導示意圖 === */
+.bow-guide {
+  background: linear-gradient(135deg, rgba(255, 245, 248, 0.6), rgba(255, 230, 240, 0.4));
+  border-radius: 14px;
+  padding: 12px 8px 8px;
+  margin: 4px 0 12px;
+  border: 1px dashed rgba(233, 30, 99, 0.25);
+}
+.bow-guide-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+.bow-guide-icon-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.bow-guide-phone {
+  width: 42px;
+  height: 56px;
+  filter: drop-shadow(0 2px 4px rgba(233, 30, 99, 0.2));
+}
+.phone-tilt {
+  width: 56px;
+  animation: phoneTiltDemo 2.4s ease-in-out infinite;
+  transform-origin: 50% 75%;
+}
+@keyframes phoneTiltDemo {
+  0%, 20% { transform: rotate(0deg); }
+  50%, 60% { transform: rotate(0deg) translateY(2px); }
+  100% { transform: rotate(0deg); }
+}
+.bow-guide-label {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.bow-guide-arrow {
+  font-size: 1rem;
+  color: var(--gold);
+  font-weight: 700;
+  margin: 0 2px;
+  align-self: center;
+}
+.bow-guide-cycle {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--rose);
+  margin-top: 8px;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+}
+
 </style>
 </head>
 <body>
@@ -1075,11 +1136,50 @@ body::before {
 <!-- 第4次失敗:拜拜彎腰互動畫面 -->
 <div class="popup-overlay" id="bowModal">
   <div class="popup-card" style="max-width:400px;">
-    <h3 class="popup-title" style="margin-bottom:6px;">虔 心 祈 求</h3>
-    <p class="popup-desc" style="font-size:0.85rem; margin-bottom:10px;">
-      請手持裝置 緩緩 <span class="em">向前一傾</span><br>
-      心中 <span class="em">默念三次</span> 您所求之事
+    <h3 class="popup-title" style="margin-bottom:6px;">虔 心 祈 求 月 老</h3>
+    <p class="popup-desc" style="font-size:0.85rem; margin-bottom:10px; line-height:1.7;">
+      手 持 手 機 <span class="em">向 前 鞠 躬 三 次</span><br>
+      <span style="font-size:0.78rem; color:var(--text-light);">每 一 拜 都 在 心 中 默 念 您 所 求 之 事</span>
     </p>
+
+    <!-- 引導示意圖:手機從直立 → 向前傾的動畫 -->
+    <div class="bow-guide">
+      <div class="bow-guide-step">
+        <div class="bow-guide-icon-wrap">
+          <svg class="bow-guide-phone phone-up" viewBox="0 0 60 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="6" y="4" width="48" height="82" rx="8" ry="8" fill="#fff5f8" stroke="#e91e63" stroke-width="2.5"/>
+            <rect x="11" y="11" width="38" height="60" rx="2" fill="#ffe4ec"/>
+            <circle cx="30" cy="80" r="2.5" fill="#e91e63"/>
+          </svg>
+          <span class="bow-guide-label">① 直 立</span>
+        </div>
+        <div class="bow-guide-arrow">→</div>
+        <div class="bow-guide-icon-wrap">
+          <svg class="bow-guide-phone phone-tilt" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <g transform="translate(45 75) rotate(-30) translate(-30 -45)">
+              <rect x="6" y="4" width="48" height="82" rx="8" ry="8" fill="#fff5f8" stroke="#e91e63" stroke-width="2.5"/>
+              <rect x="11" y="11" width="38" height="60" rx="2" fill="#ffe4ec"/>
+              <circle cx="30" cy="80" r="2.5" fill="#e91e63"/>
+            </g>
+            <!-- 弧形運動軌跡 -->
+            <path d="M 45 8 Q 65 30 75 60" stroke="#f5b942" stroke-width="2" fill="none" stroke-dasharray="3 3" opacity="0.7"/>
+            <!-- 鞠躬箭頭 -->
+            <path d="M 70 55 L 76 62 L 70 68" stroke="#f5b942" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="bow-guide-label">② 鞠 躬</span>
+        </div>
+        <div class="bow-guide-arrow">→</div>
+        <div class="bow-guide-icon-wrap">
+          <svg class="bow-guide-phone phone-up" viewBox="0 0 60 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="6" y="4" width="48" height="82" rx="8" ry="8" fill="#fff5f8" stroke="#e91e63" stroke-width="2.5"/>
+            <rect x="11" y="11" width="38" height="60" rx="2" fill="#ffe4ec"/>
+            <circle cx="30" cy="80" r="2.5" fill="#e91e63"/>
+          </svg>
+          <span class="bow-guide-label">③ 起 身</span>
+        </div>
+      </div>
+      <div class="bow-guide-cycle">↻ 重 複 三 次 完 成 儀 式</div>
+    </div>
     
     <!-- 拜拜雙手圖 + 動態煙 -->
     <div class="bow-stage">
@@ -1096,11 +1196,11 @@ body::before {
       
       <!-- 鞠躬進度顯示 -->
       <div class="bow-progress">
-        <div class="bow-progress-label">彎 腰 進 度</div>
+        <div class="bow-progress-label" id="bowLabel">鞠 躬 進 度 ‧ 0 / 3</div>
         <div class="bow-progress-bar">
           <div class="bow-progress-fill" id="bowFill"></div>
         </div>
-        <div class="bow-progress-hint" id="bowHint">請慢慢將手機向前傾</div>
+        <div class="bow-progress-hint" id="bowHint">請手持手機 緩緩向前鞠躬 ♡</div>
       </div>
     </div>
     
@@ -1169,7 +1269,10 @@ body::before {
         <div class="cta-step"><span class="cta-step-num">3</span>傳送截圖</div>
       </div>
       <a href="https://lin.ee/n2N8qhh" target="_blank" class="line-btn">
-        <span class="line-icon">L</span>
+        <svg class="line-icon-svg" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="36" height="36" rx="8" ry="8" fill="#fff"/>
+          <text x="50%" y="55%" text-anchor="middle" dominant-baseline="middle" font-family="-apple-system, system-ui, sans-serif" font-size="11" font-weight="800" fill="#06C755" letter-spacing="-0.5">LINE</text>
+        </svg>
         <span>加 入 官 方 L I N E</span>
       </a>
     </div>
@@ -1216,7 +1319,10 @@ body::before {
         <div class="cta-step"><span class="cta-step-num">3</span>傳送截圖</div>
       </div>
       <a href="https://lin.ee/n2N8qhh" target="_blank" class="line-btn">
-        <span class="line-icon">L</span>
+        <svg class="line-icon-svg" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="36" height="36" rx="8" ry="8" fill="#fff"/>
+          <text x="50%" y="55%" text-anchor="middle" dominant-baseline="middle" font-family="-apple-system, system-ui, sans-serif" font-size="11" font-weight="800" fill="#06C755" letter-spacing="-0.5">LINE</text>
+        </svg>
         <span>加 入 官 方 L I N E</span>
       </a>
     </div>
@@ -2993,9 +3099,11 @@ function startBowDetection() {
   // 重置 UI
   const fillEl = document.getElementById('bowFill');
   const hintEl = document.getElementById('bowHint');
+  const labelEl = document.getElementById('bowLabel');
   const imgEl = document.getElementById('prayingImg');
   if (fillEl) fillEl.style.width = '0%';
-  if (hintEl) hintEl.textContent = '請慢慢將手機向前傾';
+  if (hintEl) hintEl.textContent = '請手持手機 緩緩向前鞠躬 ♡';
+  if (labelEl) labelEl.textContent = '鞠 躬 進 度 ‧ 0 / 3';
   if (imgEl) imgEl.style.transform = 'rotateX(0deg) translateY(0px)';
   
   // 嘗試啟動方向感應 (iOS 13+ 需另外請求權限,但通常已隨 motion 一起授權)
@@ -3051,28 +3159,35 @@ function startBowDetection() {
         // 震動回饋(若裝置支援)
         try { if (navigator.vibrate) navigator.vibrate(80); } catch(e) {}
         
-        // 更新進度條
+        // 更新進度條 + label 計數
         const progress = Math.min(100, (bowCount / TOTAL_BOWS) * 100);
         if (fillEl) fillEl.style.width = progress + '%';
+        const labelEl2 = document.getElementById('bowLabel');
+        if (labelEl2) labelEl2.textContent = '鞠 躬 進 度 ‧ ' + bowCount + ' / ' + TOTAL_BOWS;
         
         if (bowCount >= TOTAL_BOWS) {
-          if (hintEl) hintEl.innerHTML = '<span style="color:var(--gold);font-weight:700;">虔心已達 ✦ 真誠已上達月老</span>';
+          if (hintEl) hintEl.innerHTML = '<span style="color:var(--gold);font-weight:700;">三 拜 已 達 ✦ 真 誠 已 上 達 月 老</span>';
           // 完成後加長震動 (3 短脈衝)
           try { if (navigator.vibrate) navigator.vibrate([100, 60, 100, 60, 200]); } catch(e) {}
           bowDetecting = false;  // 防止重複觸發
           setTimeout(closeBowModal, 1500);
         } else {
-          if (hintEl) hintEl.textContent = '已拜 ' + bowCount + ' / ' + TOTAL_BOWS + ' ♡ 請繼續';
+          const remaining = TOTAL_BOWS - bowCount;
+          if (hintEl) hintEl.innerHTML = '完 成 第 <span style="color:var(--gold);">' + bowCount + '</span> 拜 ♡ 還 差 <span style="color:var(--rose);">' + remaining + '</span> 拜';
         }
       }
-      // 引導文案(尚未完成第一拜時)
-      else if (bowCount === 0 && hintEl) {
-        if (tilt < 5) {
-          hintEl.textContent = '請慢慢將手機向前傾...';
-        } else if (tilt < DOWN_THRESHOLD) {
-          hintEl.textContent = '再多一點 ♡ 默念您所求之事';
+      // 引導文案(動態提示)
+      else if (hintEl) {
+        if (bowCount === 0) {
+          if (tilt < 5) {
+            hintEl.textContent = '① 請手持手機 緩緩向前鞠躬';
+          } else if (tilt < DOWN_THRESHOLD) {
+            hintEl.textContent = '繼 續 向 前 傾 ♡ 默 念 心 願';
+          } else if (bowState === 'down') {
+            hintEl.textContent = '② 很 好 ♡ 請 慢 慢 起 身';
+          }
         } else if (bowState === 'down') {
-          hintEl.textContent = '很好 ♡ 請慢慢起身';
+          hintEl.textContent = '② 起 身 才 算 完 成 一 拜 ♡';
         }
       }
     };
