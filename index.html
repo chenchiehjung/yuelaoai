@@ -1536,10 +1536,10 @@ body::before {
 // =============================================
 // 後台埋點 + 客戶資料儲存
 // =============================================
-// 使用 KVdb.io 匿名雲端儲存 (不需任何帳號 完全免費)
-// bucket 名稱是隨機產生的 從外面猜不到
-const KVDB_BUCKET = 'yuelao-mgmt-buoScZ3xFMaXF7zSwLnB';
-const KVDB_BASE   = 'https://kvdb.io/' + KVDB_BUCKET;
+// 使用 Supabase (PostgreSQL，免費方案)
+// publishable key 是公開金鑰，搭配 RLS policy 限制只能 insert
+const SUPABASE_URL = 'https://dnwsieglvajittndswqc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_oCGGG6nzm5mUJeYwhiru9g_59QaPxR3';
 
 const __sessionStart = Date.now();
 const __sessionData = {
@@ -1558,44 +1558,46 @@ function trackEvent(name, params) {
   __sessionEvents.push({ name: name, t: Date.now() - __sessionStart, params: params || {} });
 }
 
-// 把整筆 session 寫入 KVdb (一次寫一個 key)
+// 把整筆 session 寫入 Supabase customer_records 表
+// (Supabase 需要自訂 headers，所以不能用 sendBeacon；改用 fetch + keepalive)
 let __sheetsSent = false;
 function sendSessionToSheets(reason) {
   if (!__sessionData.questionSubmitted) return;
   if (__sheetsSent && reason !== 'final-update') return;
   __sheetsSent = true;
 
+  // 注意：Supabase 欄位是 snake_case
   const payload = {
     timestamp: new Date().toISOString(),
     name: (typeof userData !== 'undefined' && userData.name) || '',
     birthday: (typeof userData !== 'undefined' && userData.birthday) || '',
     question: (typeof userData !== 'undefined' && userData.question) || '',
-    finalResult: __sessionData.finalResult || 'abandoned',
-    finalGrade: __sessionData.finalGrade || '',
+    final_result: __sessionData.finalResult || 'abandoned',
+    final_grade: __sessionData.finalGrade || '',
     attempts: __sessionData.attempts,
-    durationSeconds: Math.floor((Date.now() - __sessionStart) / 1000),
+    duration_seconds: Math.floor((Date.now() - __sessionStart) / 1000),
     shared: __sessionData.shared,
-    lineClicked: __sessionData.lineClicked,
-    historyJson: JSON.stringify(__sessionData.history),
-    eventsJson: JSON.stringify(__sessionEvents),
+    line_clicked: __sessionData.lineClicked,
+    history_json: JSON.stringify(__sessionData.history),
+    events_json: JSON.stringify(__sessionEvents),
     referrer: document.referrer || '',
-    userAgent: navigator.userAgent || '',
+    user_agent: navigator.userAgent || '',
     reason: reason || ''
   };
 
-  // 用時間戳當 key prefix 確保排序一致
-  const key = 'r-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
-  const url = KVDB_BASE + '/' + key;
-
+  const url = SUPABASE_URL + '/rest/v1/customer_records';
   try {
-    const data = JSON.stringify(payload);
-    const blob = new Blob([data], { type: 'application/json;charset=utf-8' });
-    // sendBeacon 是 POST,KVdb 接受 POST 來建立新 key
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(url, blob);
-    } else {
-      fetch(url, { method: 'POST', body: data, headers: {'Content-Type':'application/json'}, keepalive: true, mode: 'no-cors' });
-    }
+    fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      keepalive: true
+    }).catch(function() {});
   } catch(e) {}
 }
 

@@ -386,9 +386,9 @@ tbody tr:last-child td { border-bottom: none; }
 <div class="toast" id="toast"></div>
 
 <script>
-// === 設定 (使用 KVdb 匿名儲存,無需帳號) ===
-const KVDB_BUCKET = 'yuelao-mgmt-buoScZ3xFMaXF7zSwLnB';
-const KVDB_BASE   = 'https://kvdb.io/' + KVDB_BUCKET;
+// === 設定 (使用 Supabase 雲端資料庫) ===
+const SUPABASE_URL = 'https://dnwsieglvajittndswqc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_oCGGG6nzm5mUJeYwhiru9g_59QaPxR3';
 // 管理員密碼的 SHA-256 hash (明文是 zxcvb123,但這裡只存 hash 比較安全)
 const ADMIN_PW_HASH = '9f53feb29f292c923d9d901c4a6b6a91f51245bafabc0eac8701b2830ff49c6f';
 
@@ -427,99 +427,105 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-// 從 KVdb 載入所有客戶記錄
-// KVdb 的列表 API 有時回傳 NDJSON,有時回傳 tab-separated text,做容錯解析
-async function loadAllRecords() {
-  // 試 ?values=true (預設 NDJSON / tab-separated)
-  const url = KVDB_BASE + '/?values=true&limit=1000';
-  const r = await fetch(url);
+// snake_case 轉 camelCase (Supabase 欄位 → 前端 UI 用的鍵名)
+function snakeToCamel(rec) {
+  return {
+    timestamp: rec.timestamp,
+    name: rec.name,
+    birthday: rec.birthday,
+    question: rec.question,
+    finalResult: rec.final_result,
+    finalGrade: rec.final_grade,
+    attempts: rec.attempts,
+    durationSeconds: rec.duration_seconds,
+    shared: rec.shared,
+    lineClicked: rec.line_clicked,
+    historyJson: rec.history_json,
+    eventsJson: rec.events_json,
+    referrer: rec.referrer,
+    userAgent: rec.user_agent,
+    reason: rec.reason
+  };
+}
+
+// 從 Supabase 載入所有客戶記錄
+// 透過 RPC get_yuelao_records 呼叫，必須帶管理員密碼才會回資料
+async function loadAllRecords(pw) {
+  const url = SUPABASE_URL + '/rest/v1/rpc/get_yuelao_records';
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ pwd: pw })
+  });
   if (!r.ok) {
-    if (r.status === 404) return [];
-    throw new Error('HTTP ' + r.status + ' (列表失敗)');
+    const errText = await r.text().catch(() => '');
+    throw new Error('HTTP ' + r.status + ' ' + (errText.substring(0, 120) || '讀取失敗'));
   }
-  const text = await r.text();
-  if (!text || !text.trim()) return [];
-  
-  const records = [];
-  const lines = text.split('\n');
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    let valuePart = line;
-    // 格式 1: tab 分隔 "key\tvalue"
-    const tabIdx = line.indexOf('\t');
-    if (tabIdx > 0) {
-      valuePart = line.substring(tabIdx + 1);
-    }
-    // 嘗試解析為 JSON
-    try {
-      const obj = JSON.parse(valuePart);
-      if (obj && typeof obj === 'object' && obj.timestamp) {
-        records.push(obj);
-      }
-    } catch (e) {
-      // 也試試把整行當 JSON
-      try {
-        const obj2 = JSON.parse(line);
-        if (obj2 && typeof obj2 === 'object' && obj2.timestamp) {
-          records.push(obj2);
-        }
-      } catch(e2) {}
-    }
-  }
+  const data = await r.json();
+  if (!Array.isArray(data)) return [];
+  // 轉 snake_case → camelCase
+  const records = data.map(snakeToCamel);
   records.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
   return records;
 }
 
-// === 診斷工具:測試讀寫連線 ===
+// === 診斷工具:測試 Supabase 連線 ===
 async function runDiagnostics() {
   const out = document.getElementById('diagOutput');
   out.style.display = 'block';
   out.textContent = '正在測試...';
   let log = '';
-  
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json'
+  };
+
   // 1. 寫入測試
-  const testKey = 'diag-' + Date.now();
-  const testPayload = { timestamp: new Date().toISOString(), name: '__DIAG__', question: 'test', finalResult: 'success' };
-  log += '【1】寫入測試 (POST)\n';
-  log += '   URL: ' + KVDB_BASE + '/' + testKey + '\n';
+  log += '【1】寫入測試 (POST customer_records)\n';
+  log += '   URL: ' + SUPABASE_URL + '/rest/v1/customer_records\n';
   try {
-    const r = await fetch(KVDB_BASE + '/' + testKey, {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/customer_records', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testPayload)
+      headers: Object.assign({}, headers, { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        name: '__DIAG__', question: 'diagnostic test',
+        final_result: 'success', attempts: 0, duration_seconds: 0
+      })
     });
     log += '   狀態: ' + r.status + ' ' + r.statusText + '\n';
     const txt = await r.text();
-    log += '   回應: ' + (txt.substring(0, 100) || '(空)') + '\n\n';
+    log += '   回應: ' + (txt.substring(0, 200) || '(空 = 成功)') + '\n\n';
   } catch (e) {
     log += '   ❌ 失敗: ' + e.message + '\n\n';
   }
-  
-  // 2. 讀取單一 key
-  log += '【2】讀回剛才寫的測試資料 (GET 單一 key)\n';
-  log += '   URL: ' + KVDB_BASE + '/' + testKey + '\n';
+
+  // 2. 透過 RPC 讀回所有資料 (用 sessionStorage 的密碼)
+  log += '【2】讀取 RPC get_yuelao_records (含密碼驗證)\n';
+  log += '   URL: ' + SUPABASE_URL + '/rest/v1/rpc/get_yuelao_records\n';
   try {
-    const r = await fetch(KVDB_BASE + '/' + testKey);
+    const pw = adminPw || sessionStorage.getItem('yl_admin_pw') || '';
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_yuelao_records', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ pwd: pw })
+    });
     log += '   狀態: ' + r.status + ' ' + r.statusText + '\n';
     const txt = await r.text();
-    log += '   回應 (前 200 字): ' + (txt.substring(0, 200) || '(空)') + '\n\n';
-  } catch (e) {
-    log += '   ❌ 失敗: ' + e.message + '\n\n';
-  }
-  
-  // 3. 列表所有 keys
-  log += '【3】列表所有 keys (GET ?values=true)\n';
-  log += '   URL: ' + KVDB_BASE + '/?values=true&limit=10\n';
-  try {
-    const r = await fetch(KVDB_BASE + '/?values=true&limit=10');
-    log += '   狀態: ' + r.status + ' ' + r.statusText + '\n';
-    log += '   Content-Type: ' + r.headers.get('content-type') + '\n';
-    const txt = await r.text();
-    log += '   回應 (前 500 字):\n' + (txt.substring(0, 500) || '(空)') + '\n';
+    log += '   回應 (前 500 字):\n' + (txt.substring(0, 500) || '(空)') + '\n\n';
+    try {
+      const data = JSON.parse(txt);
+      if (Array.isArray(data)) log += '   解析: ' + data.length + ' 筆記錄\n';
+    } catch(e) {}
   } catch (e) {
     log += '   ❌ 失敗: ' + e.message + '\n';
   }
-  
+
   out.textContent = log;
 }
 
@@ -542,7 +548,7 @@ async function login(pw) {
     }
 
     // 2. 從雲端載入資料
-    allRecords = await loadAllRecords();
+    allRecords = await loadAllRecords(pw);
     adminPw = pw;
     sessionStorage.setItem('yl_admin_pw', pw);
     enterDashboard();
