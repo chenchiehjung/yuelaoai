@@ -1410,6 +1410,92 @@ body::before {
 <div class="toast" id="toast"></div>
 
 <script>
+// =============================================
+// 後台埋點:GA4 + Google Sheets (Apps Script)
+// =============================================
+// 部署 GA4 與 Apps Script 之後,把下方兩個值填入即可生效
+// 沒填的話追蹤代碼會靜默不執行,不影響網站運作
+const GA_MEASUREMENT_ID = '';   // 例如 'G-XXXXXXXXXX'
+const SHEETS_ENDPOINT   = '';   // 例如 'https://script.google.com/macros/s/AKfyc.../exec'
+
+const __sessionStart = Date.now();
+const __sessionData = {
+  shared: false,
+  lineClicked: false,
+  questionSubmitted: false,
+  finalResult: null,
+  finalGrade: null,
+  attempts: 0,
+  history: []
+};
+
+if (GA_MEASUREMENT_ID) {
+  (function(){
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_MEASUREMENT_ID;
+    document.head.appendChild(s);
+  })();
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function(){ window.dataLayer.push(arguments); };
+  gtag('js', new Date());
+  gtag('config', GA_MEASUREMENT_ID, { send_page_view: true });
+}
+
+function trackEvent(name, params) {
+  params = params || {};
+  if (window.gtag) {
+    try { gtag('event', name, params); } catch(e) {}
+  }
+}
+
+let __sheetsSent = false;
+function sendSessionToSheets(reason) {
+  if (!SHEETS_ENDPOINT) return;
+  if (!__sessionData.questionSubmitted) return;
+  if (__sheetsSent && reason !== 'final-update') return;
+  __sheetsSent = true;
+
+  const payload = {
+    timestamp: new Date().toISOString(),
+    name: (typeof userData !== 'undefined' && userData.name) || '',
+    birthday: (typeof userData !== 'undefined' && userData.birthday) || '',
+    question: (typeof userData !== 'undefined' && userData.question) || '',
+    finalResult: __sessionData.finalResult || 'abandoned',
+    finalGrade: __sessionData.finalGrade || '',
+    attempts: __sessionData.attempts,
+    durationSeconds: Math.floor((Date.now() - __sessionStart) / 1000),
+    shared: __sessionData.shared,
+    lineClicked: __sessionData.lineClicked,
+    historyJson: JSON.stringify(__sessionData.history),
+    referrer: document.referrer || '',
+    userAgent: navigator.userAgent || '',
+    reason: reason || ''
+  };
+
+  try {
+    const data = JSON.stringify(payload);
+    const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(SHEETS_ENDPOINT, blob);
+    } else {
+      fetch(SHEETS_ENDPOINT, { method: 'POST', body: data, mode: 'no-cors', keepalive: true });
+    }
+  } catch(e) {}
+}
+
+window.addEventListener('pagehide', function() {
+  if (__sessionData.questionSubmitted && !__sessionData.finalResult) {
+    __sessionData.finalResult = 'abandoned';
+  }
+  sendSessionToSheets('pagehide');
+});
+window.addEventListener('beforeunload', function() {
+  if (__sessionData.questionSubmitted && !__sessionData.finalResult) {
+    __sessionData.finalResult = 'abandoned';
+  }
+  sendSessionToSheets('beforeunload');
+});
 
 // === 隱藏的測試重置功能 ===
 // 在月老圖上連點 5 下,清除今日抽籤記錄
@@ -1754,6 +1840,10 @@ submitBtn.addEventListener('click', function() {
 
   // 通過驗證後 → 把姓名與生日存到本機(下次自動帶入)
   saveUserInfo(name, year, month, day);
+
+  // 後台埋點:表單送出
+  __sessionData.questionSubmitted = true;
+  trackEvent('form_submit', { has_name: !!name, has_birthday: !!(year && month && day), question_len: question.length });
 
   if (!canDraw()) {
     limitPopup.classList.add('show');
@@ -2956,6 +3046,8 @@ async function doToss() {
       manualToss.disabled = true;
       cupHint.innerHTML = '<span class="highlight">三聖筊達成 月老為您指引 ♡</span>';
       markDrawn();
+      __sessionData.finalResult = 'success';
+      trackEvent('toss_success', {});
       await sleep(800);
       showPoem();
     } else {
@@ -2970,6 +3062,9 @@ async function doToss() {
     
     // 記錄這一輪的擲筊結果到歷史
     tossHistory.push({ round: consecutiveFail + 1, sheng: prevSheng, result: result });
+    __sessionData.attempts = consecutiveFail + 1;
+    __sessionData.history.push({ round: consecutiveFail + 1, sheng: prevSheng, result: result });
+    trackEvent('toss_round', { round: consecutiveFail + 1, result: result, prev_sheng: prevSheng });
     
     // 取對應文案
     const interp = getInterpretation(prevSheng, result, userData.question);
@@ -2995,6 +3090,9 @@ async function doToss() {
       cupHint.innerHTML = '<span class="highlight">緣分尚未具足 ♡</span>';
       document.getElementById('blockedModal').classList.add('show');
       document.body.style.overflow = 'hidden';
+      __sessionData.finalResult = 'blocked';
+      trackEvent('blocked', { attempts: __sessionData.attempts });
+      sendSessionToSheets('blocked');
     }
     // 第 2 輪失敗 → 跳香爐祈求
     else if (consecutiveFail === 2) {
@@ -3121,6 +3219,9 @@ document.getElementById('shareBtn').addEventListener('click', async function() {
       });
       // 真的完成分享了 (使用者選了 LINE / IG / 訊息等並送出)
       markShared();
+      __sessionData.shared = true;
+      trackEvent('share_click', { method: 'native' });
+      sendSessionToSheets('share');
       limitPopup.classList.remove('show');
       showToast('分享成功 ♡ 您可立刻再求一次籤');
       return;
@@ -3196,6 +3297,10 @@ document.getElementById('limitCloseBtn').addEventListener('click', function() {
 
 function showPoem() {
   const poem = poems[Math.floor(Math.random() * poems.length)];
+  // 後台埋點:籤詩出現
+  __sessionData.finalGrade = poem.grade;
+  trackEvent('poem_shown', { grade: poem.grade, number: poem.number });
+  sendSessionToSheets('poem-shown');
   document.getElementById('poemQuerent').innerHTML =
     `信女 <span class="name">${userData.name}</span><br>所問:${userData.question}`;
   document.getElementById('poemNumber').textContent = poem.number;
@@ -3247,6 +3352,15 @@ document.getElementById('closeBlocked').addEventListener('click', function() {
   cupHint.innerHTML = '<span class="highlight">緣分尚未具足 請聯繫老師 ♡</span>';
   manualToss.style.display = 'none';
 });
+// 後台埋點:LINE 按鈕點擊 (兩處 line-btn 都會攔到)
+document.querySelectorAll('.line-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    __sessionData.lineClicked = true;
+    trackEvent('line_click', { context: btn.closest('#blockedModal') ? 'blocked' : 'poem' });
+    sendSessionToSheets('line-click');
+  });
+});
+
 // === 彎腰偵測:第4次失敗時的儀式互動 ===
 let bowDetecting = false;
 let bowInitialBeta = null;
