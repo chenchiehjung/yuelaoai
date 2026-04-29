@@ -1570,6 +1570,34 @@ function fillBirthday() {
 }
 fillBirthday();
 
+// === 從 localStorage 載入上次填寫的姓名與生日,自動帶入欄位 ===
+// 注意:不存問題(每次擲筊都應重問),也不存其他敏感資訊
+const STORAGE_KEY = 'yuelao_user_profile';
+function loadSavedUserInfo() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved.name) {
+      document.getElementById('nameInput').value = saved.name;
+    }
+    if (saved.year && saved.month && saved.day) {
+      document.getElementById('birthYear').value = saved.year;
+      document.getElementById('birthMonth').value = saved.month;
+      document.getElementById('birthDay').value = saved.day;
+    }
+  } catch(e) { /* localStorage 可能被禁用,忽略即可 */ }
+}
+function saveUserInfo(name, year, month, day) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      name: name, year: year, month: month, day: day,
+      savedAt: new Date().toISOString()
+    }));
+  } catch(e) { /* 寫入失敗也不阻斷流程 */ }
+}
+loadSavedUserInfo();
+
 const cup1 = document.getElementById('cup1');
 const cup2 = document.getElementById('cup2');
 const cupResult = document.getElementById('cupResult');
@@ -1723,6 +1751,9 @@ submitBtn.addEventListener('click', function() {
   if (!name) { showToast('請輸入姓名 ♡'); return; }
   if (!year || !month || !day) { showToast('請選擇完整國曆生日 ♡'); return; }
   if (!question) { showToast('請寫下心中所問 ♡'); return; }
+
+  // 通過驗證後 → 把姓名與生日存到本機(下次自動帶入)
+  saveUserInfo(name, year, month, day);
 
   if (!canDraw()) {
     limitPopup.classList.add('show');
