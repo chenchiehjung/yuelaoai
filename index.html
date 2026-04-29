@@ -714,6 +714,86 @@ body::before {
   border-top: 1px dashed rgba(233, 30, 99, 0.2);
 }
 
+/* 失敗彈窗中的「問題回音」與「歷史脈絡」 */
+.echo-line {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--rose-deep);
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 245, 248, 0.6);
+  border-left: 3px solid var(--rose);
+  border-radius: 6px;
+  text-align: left;
+}
+.hist-context {
+  font-size: 0.82rem;
+  color: var(--rose-deep);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  background: rgba(212, 165, 232, 0.12);
+  border: 1px dashed var(--lavender);
+  border-radius: 8px;
+  text-align: left;
+}
+
+/* 籤詩開場 — 依過程艱辛度顯示 */
+.poem-journey {
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  margin: 4px 0 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  line-height: 1.7;
+}
+.poem-journey span {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  margin-top: 4px;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+}
+.poem-journey-easy {
+  background: linear-gradient(135deg, rgba(255, 217, 125, 0.25), rgba(255, 168, 192, 0.2));
+  color: var(--rose-deep);
+  border: 1px solid rgba(245, 185, 66, 0.3);
+}
+.poem-journey-mid {
+  background: linear-gradient(135deg, rgba(255, 168, 192, 0.2), rgba(212, 165, 232, 0.15));
+  color: var(--rose-deep);
+  border: 1px solid rgba(255, 168, 192, 0.3);
+}
+.poem-journey-hard {
+  background: linear-gradient(135deg, rgba(212, 165, 232, 0.25), rgba(184, 141, 208, 0.2));
+  color: #6b3e80;
+  border: 1px solid rgba(184, 141, 208, 0.4);
+}
+.poem-echo {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text);
+  margin: 8px 0 10px;
+  padding: 8px 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.poem-echo-name {
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 4px;
+  color: var(--text-light);
+  font-weight: 500;
+}
+.poem-querent-orig {
+  margin-top: 6px;
+}
+
 
 .poem-section.topic-tip {
   background: linear-gradient(135deg, rgba(255, 217, 125, 0.18), rgba(255, 168, 192, 0.12));
@@ -2014,10 +2094,83 @@ function detectTopic(question) {
   if (/遠距|分隔|海外|出國|距離/.test(q)) return 'distance';
   if (/家人|父母|爸媽|長輩|反對/.test(q)) return 'family';
   if (/吵架|冷戰|爭吵|溝通|關係/.test(q)) return 'conflict';
-  if (/財運|錢|薪水|加薪|投資|生意|事業|工作|升遷|貴人|偏財|正財|破財|漏財/.test(q)) return 'wealth';
+  // 財運/業績/事業相關 都歸 wealth (有對應文案);更細的差異由 getQuestionEcho 處理
+  if (/業績|業務|KPI|kpi|達標|目標|沖刺|簽單|成交|提案/.test(q)) return 'wealth';
+  if (/求職|找工作|面試|轉職|跳槽|新工作|履歷|錄取/.test(q)) return 'wealth';
+  if (/財運|錢|薪水|加薪|投資|生意|事業|工作|升遷|貴人|偏財|正財|破財|漏財|賺/.test(q)) return 'wealth';
   if (/姻緣|何時|什麼時候|遇到|遇見|新對象|新緣分|脫單|單身/.test(q)) return 'newlove';
   
-  return 'general';  // 一般問題
+  return 'general';
+}
+
+// === 從問題中萃取「具體所求」的回音 — 用於文案中「您所問的XX」 ===
+function getQuestionEcho(question) {
+  const q = question || '';
+  if (!q) return '';
+  
+  // 偵測具體金額(例如「賺到10萬」「達成50萬業績」)
+  const amountMatch = q.match(/(\d+)\s*萬/);
+  const hasAmount = amountMatch ? amountMatch[1] + ' 萬' : null;
+  
+  // 偵測時間(例如「這個月」「下個月」「今年」)
+  let timeWord = '';
+  if (/這個月|本月|當月/.test(q)) timeWord = '這個月';
+  else if (/下個月|下月/.test(q)) timeWord = '下個月';
+  else if (/今年|本年/.test(q)) timeWord = '今年內';
+  else if (/三個月|三月內|三月之內/.test(q)) timeWord = '三個月內';
+  else if (/半年/.test(q)) timeWord = '半年內';
+  
+  // 業績/業務類
+  if (/業績|業務|KPI|kpi|達標|簽單|成交/.test(q)) {
+    let s = '此事關「業績達成」';
+    if (hasAmount) s += ' (目標 ' + hasAmount + ')';
+    if (timeWord) s += ' — ' + timeWord;
+    return s;
+  }
+  if (/求職|找工作|面試|轉職|錄取/.test(q)) return '此事關「求職運」';
+  if (/復合|和好|挽回|回頭/.test(q)) return '此事關「復合可能」';
+  if (/賺.*萬|賺.*錢|加薪|薪水|升遷/.test(q)) {
+    let s = '此事關「財路」';
+    if (hasAmount) s += ' (目標 ' + hasAmount + ')';
+    if (timeWord) s += ' — ' + timeWord;
+    return s;
+  }
+  if (/結婚|婚姻|嫁|娶/.test(q)) return '此事關「婚緣」';
+  if (/曖昧|喜歡我|有沒有機會|告白/.test(q)) return '此事關「曖昧情意」';
+  if (/外遇|劈腿|出軌/.test(q)) return '此事關「感情背叛」';
+  if (/家人|父母|長輩/.test(q)) return '此事關「家人之事」';
+  if (/姻緣|脫單|單身|新對象/.test(q)) return '此事關「新緣分」';
+  return '';
+}
+
+// === 依擲筊歷史模式 給予累積式提示 ===
+function getHistoryContext(history) {
+  if (!history || history.length === 0) return '';
+  const yin = history.filter(function(h){return h.result==='yin';}).length;
+  const xiao = history.filter(function(h){return h.result==='xiao';}).length;
+  const totalSheng = history.reduce(function(s,h){return s+(h.sheng||0);}, 0);
+  const total = history.length;
+  
+  // 第 1 輪不加額外 context (太早判斷)
+  if (total < 2) return '';
+  
+  let line = '';
+  if (total === 2) {
+    if (yin === 2) line = '📿 已連兩輪皆陰 月老明確顧慮 不宜強求';
+    else if (xiao === 2) line = '📿 已連兩輪皆笑 月老在試您的真心 心要更定';
+    else line = '📿 已二輪未得 陰陽相間 心意尚未明朗';
+  } else if (total === 3) {
+    if (yin === 3) line = '📿 三輪皆陰 此事阻力較重 須先化解';
+    else if (xiao === 3) line = '📿 三輪皆笑 月老在等您靜心後再問';
+    else if (totalSheng >= 3) line = '📿 已得 ' + totalSheng + ' 聖筊 但屢屢中斷 心仍不夠專一';
+    else line = '📿 三輪未中 心緒不穩 請先沉澱';
+  } else if (total === 4) {
+    line = '📿 已四輪未中 將請您「香爐淨念」再擲';
+  } else if (total >= 5) {
+    line = '📿 已第 ' + (total + 1) + ' 輪 月老再三未允 緣分阻力深重';
+  }
+  
+  return line ? '<div class="hist-context">' + line + '</div>' : '';
 }
 
 
@@ -2925,8 +3078,31 @@ function getInterpretation(prevSheng, result, question) {
     pool = interpretations['general']['0_xiao'];
   }
   
-  // 隨機抽一個版本
-  return pool[Math.floor(Math.random() * pool.length)];
+  // 取一個版本後,包裝累積式提示與問題回音
+  const original = pool[Math.floor(Math.random() * pool.length)];
+  const echo = getQuestionEcho(question);
+  const histContext = getHistoryContext(typeof tossHistory !== 'undefined' ? tossHistory : null);
+  
+  // 複製一份避免污染原始資料
+  const interp = {
+    title: original.title,
+    level: original.level,
+    levelClass: original.levelClass,
+    desc: original.desc,
+    advice: original.advice
+  };
+  
+  // 把問題回音加到 desc 的最前面 (粗體強調)
+  if (echo) {
+    interp.desc = '<div class="echo-line">「' + echo + '」</div>' + interp.desc;
+  }
+  
+  // 把歷史脈絡加到 advice 的最前面
+  if (histContext) {
+    interp.advice = histContext + interp.advice;
+  }
+  
+  return interp;
 }
 
 
@@ -3346,8 +3522,34 @@ function showPoem() {
   __sessionData.finalGrade = poem.grade;
   trackEvent('poem_shown', { grade: poem.grade, number: poem.number });
   sendSessionToSheets('poem-shown');
+  
+  // === 客製化:依擲筊歷程的艱辛度 給不同的開場 ===
+  const failures = (typeof tossHistory !== 'undefined' && tossHistory) ? tossHistory.length : 0;
+  let journeyHTML = '';
+  if (failures === 0) {
+    journeyHTML = '<div class="poem-journey poem-journey-easy">✦ 一 氣 呵 成 三 聖 即 得 ✦<br><span>此乃緣分順遂之兆 月老欣然應允</span></div>';
+  } else if (failures === 1) {
+    journeyHTML = '<div class="poem-journey poem-journey-mid">✦ 一 試 而 得 ✦<br><span>月老歷一念而後應允</span></div>';
+  } else if (failures === 2) {
+    journeyHTML = '<div class="poem-journey poem-journey-mid">✦ 二 度 轉 念 終 得 三 聖 ✦<br><span>月老在您靜心後給予指引</span></div>';
+  } else if (failures === 3) {
+    journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 經 三 次 沉 澱 終 得 應 允 ✦<br><span>誠心打動月老 此籤值得珍視</span></div>';
+  } else if (failures === 4) {
+    journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 歷 香 爐 淨 念 終 得 三 聖 ✦<br><span>至誠感動月老 此籤得來不易</span></div>';
+  } else {
+    journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 經 香 爐 淨 念 與 虔 心 鞠 躬 ✦<br><span>歷經考驗 月老終予應允<br>此籤得來不易 請務必珍重</span></div>';
+  }
+  
+  // 把問題回音也帶入(讓客戶看到月老針對「他的問題」回應)
+  const echo = getQuestionEcho(userData.question);
+  let echoHTML = '';
+  if (echo) {
+    echoHTML = '<div class="poem-echo">月老聞 ' + echo + '<br><span class="poem-echo-name">為信女 <strong>' + userData.name + '</strong> 指引如下</span></div>';
+  }
+  
   document.getElementById('poemQuerent').innerHTML =
-    `信女 <span class="name">${userData.name}</span><br>所問:${userData.question}`;
+    journeyHTML + echoHTML +
+    `<div class="poem-querent-orig">信女 <span class="name">${userData.name}</span><br>所問:${userData.question}</div>`;
   document.getElementById('poemNumber').textContent = poem.number;
   document.getElementById('poemGrade').textContent = poem.grade;
   document.getElementById('poemVerse').innerHTML = poem.verse
