@@ -611,6 +611,82 @@ body::before {
   font-weight: 700;
 }
 
+/* 歷次擲筊紀錄摘要 */
+.history-summary {
+  background: linear-gradient(135deg, rgba(212, 165, 232, 0.12), rgba(255, 168, 192, 0.12));
+  border: 1px dashed rgba(212, 165, 232, 0.45);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0 0 14px;
+  text-align: center;
+}
+.history-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--rose-deep);
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+}
+.history-seq {
+  font-size: 0.78rem;
+  color: var(--text);
+  line-height: 1.9;
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+.hist-round {
+  display: inline-block;
+  margin: 2px 4px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.74rem;
+}
+.hist-sep {
+  display: none;
+}
+.hist-sheng {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+.hist-yin {
+  color: #6b4f7a;
+  font-weight: 800;
+  background: rgba(107, 79, 122, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.hist-xiao {
+  color: var(--rose);
+  font-weight: 800;
+  background: rgba(233, 30, 99, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.history-tally {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.hist-num {
+  color: var(--rose);
+  font-weight: 800;
+  font-size: 0.92rem;
+  margin: 0 2px;
+}
+.history-pattern {
+  font-size: 0.85rem;
+  color: var(--rose-deep);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(233, 30, 99, 0.2);
+}
+
 
 .poem-section.topic-tip {
   background: linear-gradient(135deg, rgba(255, 217, 125, 0.18), rgba(255, 168, 192, 0.12));
@@ -990,7 +1066,7 @@ body::before {
   <header class="header">
     <div class="header-cute">~ welcome to the shrine ~</div>
     <h1 class="title">緣分籤詩</h1>
-    <p class="subtitle">擲 杯 問 月 老</p>
+    <p class="subtitle">擲 筊 問 月 老</p>
   </header>
 
   <section class="shrine">
@@ -1000,7 +1076,7 @@ body::before {
       <p class="shrine-desc">
         誠心默念心中所求<br>
         <span class="em">姻緣 復合 貴人 財路</span> 皆可祈問<br>
-        擲杯得三聖筊 月老為您指引
+        擲筊得三聖筊 月老為您指引
       </p>
       <div class="cup-legend">
         <div class="legend-item">
@@ -1510,6 +1586,7 @@ const iosPrePopup = document.getElementById('iosPrePopup');
 
 let consecutiveSheng = 0;
 let consecutiveFail = 0;  // 連續失敗次數(沒得聖筊就+1,得到聖筊歸零)
+let tossHistory = [];  // 記錄歷次失敗的擲筊結果 [{round, sheng, result}, ...]
 let isTossing = false;
 let userData = { name: '', birthday: '', question: '' };
 let lastShakeTime = 0;
@@ -1621,6 +1698,7 @@ function enterTossScreen() {
 
   consecutiveSheng = 0;
   consecutiveFail = 0;
+  tossHistory = [];
   incenseShown = false;
   isFinished = false;
   updateProgress();
@@ -2686,7 +2764,7 @@ function getInterpretation(prevSheng, result, question) {
 }
 
 
-// === 震動 + 擲杯音效 ===
+// === 震動 + 擲筊音效 ===
 let audioCtx = null;
 function getAudioCtx() {
   if (!audioCtx) {
@@ -2704,7 +2782,7 @@ function vibrate(pattern) {
   } catch(e) {}
 }
 
-// 擲杯聲音:模擬「擲下木製筊杯落地」的聲音
+// 擲筊聲音:模擬「擲下木製筊杯落地」的聲音
 // 用 Web Audio 合成:低頻 thud + 短促 click + 木質共鳴
 function playTossSound() {
   const ctx = getAudioCtx();
@@ -2767,7 +2845,7 @@ function vibrateShake() {
   vibrate(40);  // 40ms 短震
 }
 
-// 擲杯時的震動模式 (跟聲音同步)
+// 擲筊時的震動模式 (跟聲音同步)
 function vibrateToss() {
   vibrate([0, 80, 60, 60, 80, 50, 40]);  // 模擬筊杯彈跳
 }
@@ -2859,12 +2937,18 @@ async function doToss() {
     const prevSheng = consecutiveSheng;
     consecutiveSheng = 0;  // 連續歸零
     
+    // 記錄這一輪的擲筊結果到歷史
+    tossHistory.push({ round: consecutiveFail + 1, sheng: prevSheng, result: result });
+    
     // 取對應文案
     const interp = getInterpretation(prevSheng, result, userData.question);
     document.getElementById('prayTitle').textContent = interp.title;
     document.getElementById('prayLevel').textContent = interp.level;
     document.getElementById('prayLevel').className = 'pray-level ' + interp.levelClass;
-    document.getElementById('prayDesc').innerHTML = interp.desc;
+    
+    // 第 2 輪以後 → 在文案前面加上「歷次擲筊紀錄」摘要
+    const summary = (tossHistory.length >= 2) ? buildHistorySummary(tossHistory) : '';
+    document.getElementById('prayDesc').innerHTML = summary + interp.desc;
     document.getElementById('prayAdvice').innerHTML = interp.advice;
     
     await sleep(1000);
@@ -2898,6 +2982,58 @@ async function doToss() {
     }
     isTossing = false;
   }
+}
+
+// 根據歷史擲筊紀錄建立摘要 HTML
+function buildHistorySummary(history) {
+  if (!history || history.length === 0) return '';
+  
+  // 統計
+  const yinCount = history.filter(function(h){ return h.result === 'yin'; }).length;
+  const xiaoCount = history.filter(function(h){ return h.result === 'xiao'; }).length;
+  const totalSheng = history.reduce(function(s, h){ return s + (h.sheng || 0); }, 0);
+  
+  // 序列(用筊符號顯示) — 包含每輪先得的聖筊
+  const seqParts = history.map(function(h, i){
+    let part = '';
+    if (h.sheng > 0) {
+      part += '<span class="hist-sheng">聖×' + h.sheng + '</span>→';
+    }
+    const colorClass = h.result === 'yin' ? 'hist-yin' : 'hist-xiao';
+    const label = h.result === 'yin' ? '陰' : '笑';
+    part += '<span class="' + colorClass + '">' + label + '</span>';
+    return '<span class="hist-round">第' + h.round + '輪 ' + part + '</span>';
+  }).join('<span class="hist-sep">‧</span>');
+  
+  // 模式判斷與文案
+  let pattern = '';
+  if (history.length >= 4) {
+    if (yinCount === history.length) {
+      pattern = '已 連 ' + yinCount + ' 次 陰 筊 ‧ 阻 礙 似 重';
+    } else if (xiaoCount === history.length) {
+      pattern = '已 連 ' + xiaoCount + ' 次 笑 筊 ‧ 月 老 仍 在 觀 察';
+    } else if (totalSheng >= 4) {
+      pattern = '雖 得 ' + totalSheng + ' 聖 筊 ‧ 終 差 一 步 應 允';
+    } else {
+      pattern = '陰 陽 夾 雜 ‧ 心 緒 仍 未 定';
+    }
+  } else if (history.length === 3) {
+    if (yinCount === 3) pattern = '三 次 皆 陰 ‧ 似 有 阻 礙';
+    else if (xiaoCount === 3) pattern = '三 次 皆 笑 ‧ 月 老 在 試 您 真 心';
+    else if (totalSheng >= 3) pattern = '雖 得 ' + totalSheng + ' 聖 筊 ‧ 心 仍 不 一';
+    else pattern = '陰 陽 相 間 ‧ 心 緒 不 穩';
+  } else if (history.length === 2) {
+    if (yinCount === 2) pattern = '連 兩 次 陰 ‧ 月 老 不 應';
+    else if (xiaoCount === 2) pattern = '連 兩 次 笑 ‧ 月 老 似 有 顧 慮';
+    else pattern = '陰 笑 各 半 ‧ 心 意 未 明';
+  }
+  
+  return '<div class="history-summary">' +
+    '<div class="history-title">📜 歷 次 擲 筊 紀 錄</div>' +
+    '<div class="history-seq">' + seqParts + '</div>' +
+    '<div class="history-tally">陰 筊 <span class="hist-num">' + yinCount + '</span> 次 ‧ 笑 筊 <span class="hist-num">' + xiaoCount + '</span> 次 ‧ 共 得 聖 筊 <span class="hist-num">' + totalSheng + '</span> 次</div>' +
+    (pattern ? '<div class="history-pattern">' + pattern + '</div>' : '') +
+    '</div>';
 }
 
 function updateProgress() {
