@@ -1555,6 +1555,50 @@ window.addEventListener('beforeunload', function() {
   }
 })();
 
+// === 隱藏管理員入口:點頂部「~ welcome to the shrine ~」7 下開啟後台 ===
+(function() {
+  function setupAdminTrigger() {
+    const cuteEl = document.querySelector('.header-cute');
+    if (!cuteEl) return;
+    let tapCount = 0;
+    let tapTimer = null;
+    cuteEl.style.cursor = 'default';
+    cuteEl.style.userSelect = 'none';
+    cuteEl.addEventListener('click', function() {
+      tapCount++;
+      if (tapTimer) clearTimeout(tapTimer);
+      tapTimer = setTimeout(function() { tapCount = 0; }, 3000);
+      
+      // 點到第 4 下開始給點視覺暗示
+      if (tapCount >= 4 && tapCount < 7) {
+        const t = document.getElementById('toast');
+        if (t) {
+          t.textContent = '... ' + (7 - tapCount) + ' 次';
+          t.style.background = '#1f2937';
+          t.style.color = '#fff';
+          t.classList.add('show');
+          setTimeout(function(){
+            t.classList.remove('show');
+            t.style.background = '';
+            t.style.color = '';
+          }, 800);
+        }
+      }
+      
+      if (tapCount >= 7) {
+        tapCount = 0;
+        // 跳轉到隱藏管理頁
+        window.location.href = './yl-admin-7k3x/';
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupAdminTrigger);
+  } else {
+    setupAdminTrigger();
+  }
+})();
+
 
 const poems = [
   { number:'第 一 籤', grade:'上 上 籤',
