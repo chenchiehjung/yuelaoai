@@ -3342,11 +3342,14 @@ async function doToss() {
       isFinished = true;
       manualToss.disabled = true;
       cupHint.innerHTML = '<span class="highlight">緣分尚未具足 ♡</span>';
+      markDrawn();  // 阻礙也算一次「問」,計入今日次數
       document.getElementById('blockedModal').classList.add('show');
       document.body.style.overflow = 'hidden';
       __sessionData.finalResult = 'blocked';
       trackEvent('blocked', { attempts: __sessionData.attempts });
       sendSessionToSheets('blocked');
+      // 動態調整阻礙頁的「關閉」按鈕
+      adjustEndScreenButtons('blocked');
     }
     else {
       // 第 1 / 第 2 輪都先顯示 prayPopup,按下「再擲」後依輪次接下一階段
@@ -3499,7 +3502,13 @@ document.getElementById('shareBtn').addEventListener('click', async function() {
       trackEvent('share_click', { method: 'native' });
       sendSessionToSheets('share');
       limitPopup.classList.remove('show');
-      showToast('分享成功 ♡ 您可立刻再求一次籤');
+      if (pendingResetAfterShare) {
+        showToast('分享成功 ♡ 為您準備新一題');
+        pendingResetAfterShare = false;
+        setTimeout(resetToInitialForm, 800);
+      } else {
+        showToast('分享成功 ♡ 您可立刻再求一次籤');
+      }
       return;
     } catch (e) {
       if (e.name === 'AbortError') {
@@ -3559,7 +3568,13 @@ document.getElementById('shareBtn').addEventListener('click', async function() {
         shareBtn.textContent = originalText;
         markShared();
         limitPopup.classList.remove('show');
-        showToast('您可再求一次籤了 ♡');
+        if (pendingResetAfterShare) {
+          pendingResetAfterShare = false;
+          showToast('已分享 ♡ 為您準備新一題');
+          setTimeout(resetToInitialForm, 800);
+        } else {
+          showToast('您可再求一次籤了 ♡');
+        }
       }
     }, 1000);
   } else {
@@ -3569,6 +3584,15 @@ document.getElementById('shareBtn').addEventListener('click', async function() {
 
 document.getElementById('limitCloseBtn').addEventListener('click', function() {
   limitPopup.classList.remove('show');
+  pendingResetAfterShare = false;
+  // 如果使用者是從「再問一題」進來但放棄分享 → 把 modal/blockedModal 重新顯示讓他可以再點 LINE
+  // (避免關掉後變空白)
+  if (document.getElementById('modal').dataset.wasOpen === '1') {
+    document.getElementById('modal').classList.add('show');
+  }
+  if (document.getElementById('blockedModal').dataset.wasOpen === '1') {
+    document.getElementById('blockedModal').classList.add('show');
+  }
 });
 
 function showPoem() {
@@ -3665,21 +3689,64 @@ function showPoem() {
   modal.classList.add('show');
   modal.scrollTop = 0;
   document.body.style.overflow = 'hidden';
+  // 動態調整籤詩頁的「收起籤詩 / 再問一題」按鈕
+  adjustEndScreenButtons('poem');
+}
+
+// === 結束畫面按鈕動態調整 ===
+// 第 1 次問完(drawCount === 1): 顯示「再問一題♡」 按下→分享→重置到表單
+// 第 2 次問完(drawCount >= 2): 隱藏關閉按鈕,只剩 LINE 按鈕
+let pendingResetAfterShare = false;
+
+function getDrawCountToday() {
+  try {
+    const today = getToday();
+    return parseInt(readMulti(KEYS.draw + '_' + today) || '0', 10);
+  } catch(e) { return 0; }
+}
+
+function adjustEndScreenButtons(context) {
+  const drawCount = getDrawCountToday();
+  const closeBtnId = (context === 'poem') ? 'closeModal' : 'closeBlocked';
+  const closeBtn = document.getElementById(closeBtnId);
+  if (!closeBtn) return;
+  
+  if (drawCount >= 2) {
+    // 第 2 次以後 → 完全隱藏關閉/再問按鈕,只剩 LINE
+    closeBtn.style.display = 'none';
+  } else {
+    // 第 1 次 → 顯示「再問一題」按鈕
+    closeBtn.style.display = '';
+    closeBtn.textContent = '再 問 一 題 ♡';
+    closeBtn.style.background = 'linear-gradient(135deg, var(--rose), var(--rose-deep))';
+    closeBtn.style.color = 'white';
+    closeBtn.style.border = 'none';
+    closeBtn.style.fontWeight = '700';
+  }
+}
+
+// 重置整個 app 回到一開始的表單畫面 (姓名/生日會從 localStorage 自動帶入)
+function resetToInitialForm() {
+  // 用 reload 最乾淨 — localStorage 會自動帶入姓名生日
+  window.location.reload();
 }
 
 document.getElementById('closeModal').addEventListener('click', function() {
-  document.getElementById('modal').classList.remove('show');
-  document.body.style.overflow = '';
-  cupHint.innerHTML = '<span class="highlight">已得月老指引 ♡</span>';
-  manualToss.style.display = 'none';
+  // 第 1 次問完 → 強迫分享 → 重置到表單
+  // 第 2 次以後此按鈕已被隱藏(adjustEndScreenButtons)
+  const m = document.getElementById('modal');
+  m.dataset.wasOpen = '1';
+  m.classList.remove('show');
+  pendingResetAfterShare = true;
+  limitPopup.classList.add('show');
 });
 
-// 月老阻礙彈窗關閉
 document.getElementById('closeBlocked').addEventListener('click', function() {
-  document.getElementById('blockedModal').classList.remove('show');
-  document.body.style.overflow = '';
-  cupHint.innerHTML = '<span class="highlight">緣分尚未具足 請聯繫老師 ♡</span>';
-  manualToss.style.display = 'none';
+  const m = document.getElementById('blockedModal');
+  m.dataset.wasOpen = '1';
+  m.classList.remove('show');
+  pendingResetAfterShare = true;
+  limitPopup.classList.add('show');
 });
 // 後台埋點:LINE 按鈕點擊 (兩處 line-btn 都會攔到)
 document.querySelectorAll('.line-btn').forEach(function(btn) {
