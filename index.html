@@ -66,19 +66,25 @@ body::before {
 }
 .admin-flower {
   display: inline-block;
-  font-size: 1rem;
-  color: var(--pink-300);
-  margin: 2px 0 4px;
+  font-size: 1.7rem;
+  color: var(--pink-400);
+  margin: 4px 0 8px;
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  opacity: 0.7;
-  transition: transform 0.15s, opacity 0.15s;
+  opacity: 0.95;
+  text-shadow: 0 1px 3px rgba(255, 168, 192, 0.4);
+  animation: flowerPulse 4s ease-in-out infinite;
+  transition: transform 0.15s;
+  padding: 2px 6px;
 }
 .admin-flower:active {
   transform: scale(0.85);
-  opacity: 1;
+}
+@keyframes flowerPulse {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(15deg); }
 }
 .title {
   font-weight: 900; font-size: clamp(2.6rem, 8vw, 4.2rem);
