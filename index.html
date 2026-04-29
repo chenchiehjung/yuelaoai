@@ -338,15 +338,19 @@ body::before {
 }
 .manual-toss:disabled { opacity: 0.5; cursor: not-allowed; }
 .popup-overlay {
-  /* 手機底部 URL bar 安全邊距 */
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   position: fixed; inset: 0;
   background: rgba(255, 200, 220, 0.85);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   z-index: 90; display: none;
-  justify-content: center; align-items: center; padding: 20px;
+  justify-content: center; align-items: center;
+  /* 手機 URL bar 安全邊距 — 上下都加 */
+  padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
   opacity: 0; transition: opacity 0.4s ease;
+  /* 防止內容溢出整個視窗 */
+  overflow: hidden;
 }
 .popup-overlay.show { display: flex; opacity: 1; }
 .popup-card {
@@ -358,6 +362,11 @@ body::before {
     0 0 0 14px var(--pink-100);
   transform: scale(0.7);
   transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* 關鍵:卡片本身可以滾動,且最高不超過視窗,留底部安全空間 */
+  max-height: calc(100vh - 80px);
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .popup-overlay.show .popup-card { transform: scale(1); }
 .popup-icon {
@@ -403,6 +412,7 @@ body::before {
 .modal-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(255, 200, 220, 0.85);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   z-index: 100; display: none;
@@ -424,6 +434,11 @@ body::before {
   transform: scale(0.85); opacity: 0;
   transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
   margin: 30px auto;
+
+  max-height: calc(100vh - 60px);
+  max-height: calc(100dvh - 60px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .modal-overlay.show .poem-paper {
   transform: scale(1); opacity: 1;
