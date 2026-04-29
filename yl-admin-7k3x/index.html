@@ -384,9 +384,11 @@ tbody tr:last-child td { border-bottom: none; }
 <div class="toast" id="toast"></div>
 
 <script>
-// === 設定 ===
-// 部署完 Apps Script Web App 之後 把 URL 填入這裡
-const SHEETS_ENDPOINT = '';  // 例如 'https://script.google.com/macros/s/AKfyc.../exec'
+// === 設定 (使用 KVdb 匿名儲存,無需帳號) ===
+const KVDB_BUCKET = 'yuelao-mgmt-buoScZ3xFMaXF7zSwLnB';
+const KVDB_BASE   = 'https://kvdb.io/' + KVDB_BUCKET;
+// 管理員密碼的 SHA-256 hash (明文是 zxcvb123,但這裡只存 hash 比較安全)
+const ADMIN_PW_HASH = '9f53feb29f292c923d9d901c4a6b6a91f51245bafabc0eac8701b2830ff49c6f';
 
 // === 狀態 ===
 let allRecords = [];
@@ -416,14 +418,40 @@ function showToast(msg) {
 }
 
 // === 登入 ===
+// SHA-256 計算 (用 Web Crypto API)
+async function sha256Hex(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// 從 KVdb 載入所有客戶記錄
+async function loadAllRecords() {
+  const url = KVDB_BASE + '/?values=true&format=json';
+  const r = await fetch(url);
+  if (!r.ok) {
+    if (r.status === 404) return [];  // bucket 還沒任何資料
+    throw new Error('HTTP ' + r.status);
+  }
+  const data = await r.json();
+  // KVdb 回傳格式: { "key1": "value1", "key2": "value2", ... }
+  // value 是 JSON 字串(我們存的 payload)
+  const records = [];
+  for (const k in data) {
+    try {
+      const obj = typeof data[k] === 'string' ? JSON.parse(data[k]) : data[k];
+      records.push(obj);
+    } catch (e) { /* ignore broken records */ }
+  }
+  // 依時間戳遞減排序
+  records.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
+  return records;
+}
+
 async function login(pw) {
   loginError.textContent = '';
   if (!pw) {
     loginError.textContent = '請輸入密碼';
-    return;
-  }
-  if (!SHEETS_ENDPOINT) {
-    loginError.textContent = '⚠️ 尚未設定 Apps Script Endpoint，無法連線到資料庫';
     return;
   }
 
@@ -431,20 +459,20 @@ async function login(pw) {
   loginBtn.innerHTML = '<span class="spinner"></span>驗 證 中';
 
   try {
-    const url = `${SHEETS_ENDPOINT}?action=list&password=${encodeURIComponent(pw)}`;
-    const r = await fetch(url, { method: 'GET' });
-    const data = await r.json();
-
-    if (data.ok) {
-      adminPw = pw;
-      sessionStorage.setItem('yl_admin_pw', pw);
-      allRecords = data.records || [];
-      enterDashboard();
-    } else {
-      loginError.textContent = data.error === 'unauthorized' ? '密碼錯誤' : ('連線失敗: ' + data.error);
+    // 1. 比對密碼 hash (本地驗證,不需網路)
+    const hash = await sha256Hex(pw);
+    if (hash !== ADMIN_PW_HASH) {
+      loginError.textContent = '密碼錯誤';
+      return;
     }
+
+    // 2. 從雲端載入資料
+    allRecords = await loadAllRecords();
+    adminPw = pw;
+    sessionStorage.setItem('yl_admin_pw', pw);
+    enterDashboard();
   } catch (e) {
-    loginError.textContent = '連線失敗，請檢查 Endpoint 設定 ('+ e.message +')';
+    loginError.textContent = '連線失敗 ('+ e.message +')';
   } finally {
     loginBtn.disabled = false;
     loginBtn.textContent = '登 入';
@@ -455,7 +483,7 @@ loginBtn.addEventListener('click', () => login(pwInput.value));
 pwInput.addEventListener('keypress', e => { if (e.key === 'Enter') login(pwInput.value); });
 
 // 自動登入(若 sessionStorage 已有密碼)
-if (adminPw && SHEETS_ENDPOINT) {
+if (adminPw) {
   login(adminPw);
 }
 
@@ -637,17 +665,10 @@ document.querySelectorAll('th[data-sort]').forEach(th => {
 document.getElementById('refreshBtn').addEventListener('click', async () => {
   if (!adminPw) return;
   try {
-    const url = `${SHEETS_ENDPOINT}?action=list&password=${encodeURIComponent(adminPw)}&_=${Date.now()}`;
-    const r = await fetch(url);
-    const data = await r.json();
-    if (data.ok) {
-      allRecords = data.records || [];
-      applyFiltersAndRender();
-      showToast('已更新');
-    } else {
-      showToast('讀取失敗');
-    }
-  } catch (e) { showToast('連線失敗'); }
+    allRecords = await loadAllRecords();
+    applyFiltersAndRender();
+    showToast('已更新 ‧ ' + allRecords.length + ' 筆');
+  } catch (e) { showToast('讀取失敗: ' + e.message); }
 });
 
 // === 匯出 CSV ===

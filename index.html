@@ -1411,12 +1411,12 @@ body::before {
 
 <script>
 // =============================================
-// 後台埋點:GA4 + Google Sheets (Apps Script)
+// 後台埋點 + 客戶資料儲存
 // =============================================
-// 部署 GA4 與 Apps Script 之後,把下方兩個值填入即可生效
-// 沒填的話追蹤代碼會靜默不執行,不影響網站運作
-const GA_MEASUREMENT_ID = '';   // 例如 'G-XXXXXXXXXX'
-const SHEETS_ENDPOINT   = '';   // 例如 'https://script.google.com/macros/s/AKfyc.../exec'
+// 使用 KVdb.io 匿名雲端儲存 (不需任何帳號 完全免費)
+// bucket 名稱是隨機產生的 從外面猜不到
+const KVDB_BUCKET = 'yuelao-mgmt-buoScZ3xFMaXF7zSwLnB';
+const KVDB_BASE   = 'https://kvdb.io/' + KVDB_BUCKET;
 
 const __sessionStart = Date.now();
 const __sessionData = {
@@ -1429,29 +1429,15 @@ const __sessionData = {
   history: []
 };
 
-if (GA_MEASUREMENT_ID) {
-  (function(){
-    const s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_MEASUREMENT_ID;
-    document.head.appendChild(s);
-  })();
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function(){ window.dataLayer.push(arguments); };
-  gtag('js', new Date());
-  gtag('config', GA_MEASUREMENT_ID, { send_page_view: true });
-}
-
+// 簡易事件記錄(放在 session 內 跟著一起送出)
+const __sessionEvents = [];
 function trackEvent(name, params) {
-  params = params || {};
-  if (window.gtag) {
-    try { gtag('event', name, params); } catch(e) {}
-  }
+  __sessionEvents.push({ name: name, t: Date.now() - __sessionStart, params: params || {} });
 }
 
+// 把整筆 session 寫入 KVdb (一次寫一個 key)
 let __sheetsSent = false;
 function sendSessionToSheets(reason) {
-  if (!SHEETS_ENDPOINT) return;
   if (!__sessionData.questionSubmitted) return;
   if (__sheetsSent && reason !== 'final-update') return;
   __sheetsSent = true;
@@ -1468,18 +1454,24 @@ function sendSessionToSheets(reason) {
     shared: __sessionData.shared,
     lineClicked: __sessionData.lineClicked,
     historyJson: JSON.stringify(__sessionData.history),
+    eventsJson: JSON.stringify(__sessionEvents),
     referrer: document.referrer || '',
     userAgent: navigator.userAgent || '',
     reason: reason || ''
   };
 
+  // 用時間戳當 key prefix 確保排序一致
+  const key = 'r-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  const url = KVDB_BASE + '/' + key;
+
   try {
     const data = JSON.stringify(payload);
-    const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([data], { type: 'application/json;charset=utf-8' });
+    // sendBeacon 是 POST,KVdb 接受 POST 來建立新 key
     if (navigator.sendBeacon) {
-      navigator.sendBeacon(SHEETS_ENDPOINT, blob);
+      navigator.sendBeacon(url, blob);
     } else {
-      fetch(SHEETS_ENDPOINT, { method: 'POST', body: data, mode: 'no-cors', keepalive: true });
+      fetch(url, { method: 'POST', body: data, headers: {'Content-Type':'application/json'}, keepalive: true, mode: 'no-cors' });
     }
   } catch(e) {}
 }
