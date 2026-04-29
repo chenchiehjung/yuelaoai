@@ -64,6 +64,22 @@ body::before {
   font-family: 'Caveat', cursive; color: var(--pink-400);
   font-size: 1.4rem; margin-bottom: 6px; letter-spacing: 0.1em;
 }
+.admin-flower {
+  display: inline-block;
+  font-size: 1rem;
+  color: var(--pink-300);
+  margin: 2px 0 4px;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0.7;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.admin-flower:active {
+  transform: scale(0.85);
+  opacity: 1;
+}
 .title {
   font-weight: 900; font-size: clamp(2.6rem, 8vw, 4.2rem);
   color: var(--rose); letter-spacing: 0.2em; margin-bottom: 12px;
@@ -1065,6 +1081,7 @@ body::before {
 <div class="container">
   <header class="header">
     <div class="header-cute">~ welcome to the shrine ~</div>
+    <div class="admin-flower" id="adminFlower" aria-hidden="true">❀</div>
     <h1 class="title">緣分籤詩</h1>
     <p class="subtitle">擲 筊 問 月 老</p>
   </header>
@@ -1555,39 +1572,21 @@ window.addEventListener('beforeunload', function() {
   }
 })();
 
-// === 隱藏管理員入口:點頂部「~ welcome to the shrine ~」7 下開啟後台 ===
+// === 隱藏管理員入口:點頂部小花 ❀ 3 下進入後台 ===
 (function() {
   function setupAdminTrigger() {
-    const cuteEl = document.querySelector('.header-cute');
-    if (!cuteEl) return;
+    const flowerEl = document.getElementById('adminFlower');
+    if (!flowerEl) return;
     let tapCount = 0;
     let tapTimer = null;
-    cuteEl.style.cursor = 'default';
-    cuteEl.style.userSelect = 'none';
-    cuteEl.addEventListener('click', function() {
+    flowerEl.addEventListener('click', function(e) {
+      e.stopPropagation();
       tapCount++;
       if (tapTimer) clearTimeout(tapTimer);
-      tapTimer = setTimeout(function() { tapCount = 0; }, 3000);
+      tapTimer = setTimeout(function() { tapCount = 0; }, 2500);
       
-      // 點到第 4 下開始給點視覺暗示
-      if (tapCount >= 4 && tapCount < 7) {
-        const t = document.getElementById('toast');
-        if (t) {
-          t.textContent = '... ' + (7 - tapCount) + ' 次';
-          t.style.background = '#1f2937';
-          t.style.color = '#fff';
-          t.classList.add('show');
-          setTimeout(function(){
-            t.classList.remove('show');
-            t.style.background = '';
-            t.style.color = '';
-          }, 800);
-        }
-      }
-      
-      if (tapCount >= 7) {
+      if (tapCount >= 3) {
         tapCount = 0;
-        // 跳轉到隱藏管理頁
         window.location.href = './yl-admin-7k3x/';
       }
     });
