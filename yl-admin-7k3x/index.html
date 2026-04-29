@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+  background: #f5f7fa;
+  color: #1f2937;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Login ===== */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.login-box {
+  background: white;
+  border-radius: 16px;
+  padding: 36px 32px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 360px;
+}
+.login-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #111827;
+  letter-spacing: 0.05em;
+}
+.login-sub {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+.login-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.login-input:focus { border-color: #6366f1; }
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.3);
+}
+.login-btn:active { transform: translateY(0); }
+.login-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 10px;
+  min-height: 20px;
+}
+
+/* ===== Dashboard ===== */
+.dash-wrap { display: none; }
+.dash-wrap.active { display: block; }
+
+.topbar {
+  background: white;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.topbar-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: 0.05em;
+}
+.topbar-actions { display: flex; gap: 8px; }
+.btn-icon {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #374151;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.btn-icon:hover { background: #e5e7eb; }
+.btn-primary {
+  background: #6366f1;
+  color: white;
+}
+.btn-primary:hover { background: #4f46e5; }
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* === Stats Cards === */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f3f4f6;
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 6px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.stat-sub {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+.stat-card.highlight {
+  background: linear-gradient(135deg, #eef2ff, #fdf2f8);
+  border-color: #e0e7ff;
+}
+.stat-card.highlight .stat-value { color: #6366f1; }
+
+/* === Filters === */
+.filters {
+  background: white;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  border: 1px solid #f3f4f6;
+}
+.filters input, .filters select {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  background: white;
+}
+.filters input:focus, .filters select:focus { border-color: #6366f1; }
+.filter-input { flex: 1; min-width: 160px; }
+.filter-count {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+/* === Table === */
+.table-wrap {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.table-scroll {
+  overflow-x: auto;
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+thead {
+  background: #f9fafb;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 700;
+  color: #4b5563;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+th:hover { background: #f3f4f6; }
+th.sort-asc::after { content: ' ▲'; color: #6366f1; }
+th.sort-desc::after { content: ' ▼'; color: #6366f1; }
+td {
+  padding: 12px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: top;
+}
+tbody tr:hover { background: #f9fafb; }
+tbody tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.badge-success { background: #d1fae5; color: #065f46; }
+.badge-blocked { background: #fee2e2; color: #991b1b; }
+.badge-abandoned { background: #f3f4f6; color: #6b7280; }
+.badge-yes { background: #dbeafe; color: #1e40af; }
+.badge-no { background: #f3f4f6; color: #9ca3af; }
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: #9ca3af;
+}
+.empty-state-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.5; }
+
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #111827;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 1000;
+  pointer-events: none;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .stat-value { font-size: 1.4rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  th, td { padding: 8px; }
+  .container { padding: 12px; }
+}
+
+/* spinner */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-row { text-align: center; padding: 40px 20px; color: #6b7280; }
+</style>
+</head>
+<body>
+
+<!-- ============ Login ============ -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-title">後 台</div>
+    <div class="login-sub">請輸入管理員密碼</div>
+    <input type="password" class="login-input" id="pwInput" placeholder="••••••••" autocomplete="off" autofocus>
+    <button class="login-btn" id="loginBtn">登 入</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ============ Dashboard ============ -->
+<div class="dash-wrap" id="dashWrap">
+  <div class="topbar">
+    <div class="topbar-title">月老 yuelaoai · 管理後台</div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="refreshBtn">🔄 重新載入</button>
+      <button class="btn-icon btn-primary" id="exportBtn">📥 匯出 CSV</button>
+      <button class="btn-icon" id="logoutBtn">登出</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <input type="text" class="filter-input" id="searchInput" placeholder="🔍 搜尋姓名 / 問題 / 籤詩 ...">
+      <select id="resultFilter">
+        <option value="">全部結果</option>
+        <option value="success">三聖筊成功</option>
+        <option value="blocked">月老阻礙</option>
+        <option value="abandoned">中途離開</option>
+      </select>
+      <select id="dateFilter">
+        <option value="">全部時間</option>
+        <option value="today">今日</option>
+        <option value="7d">近 7 日</option>
+        <option value="30d">近 30 日</option>
+      </select>
+      <span class="filter-count" id="filterCount">0 筆</span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table id="recordsTable">
+          <thead>
+            <tr>
+              <th data-sort="timestamp">時間</th>
+              <th data-sort="name">姓名</th>
+              <th data-sort="birthday">生日</th>
+              <th data-sort="question">所問</th>
+              <th data-sort="finalResult">結果</th>
+              <th data-sort="finalGrade">籤詩</th>
+              <th data-sort="attempts">擲筊輪次</th>
+              <th data-sort="durationSeconds">停留</th>
+              <th data-sort="lineClicked">LINE</th>
+              <th data-sort="shared">分享</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody">
+            <tr><td colspan="10" class="loading-row"><span class="spinner"></span>載入中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// === 設定 ===
+// 部署完 Apps Script Web App 之後 把 URL 填入這裡
+const SHEETS_ENDPOINT = '';  // 例如 'https://script.google.com/macros/s/AKfyc.../exec'
+
+// === 狀態 ===
+let allRecords = [];
+let filteredRecords = [];
+let currentSort = { field: 'timestamp', dir: 'desc' };
+let adminPw = sessionStorage.getItem('yl_admin_pw') || '';
+
+// === DOM ===
+const loginWrap = document.getElementById('loginWrap');
+const dashWrap = document.getElementById('dashWrap');
+const pwInput = document.getElementById('pwInput');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
+const recordsBody = document.getElementById('recordsBody');
+const statsGrid = document.getElementById('statsGrid');
+const filterCount = document.getElementById('filterCount');
+const searchInput = document.getElementById('searchInput');
+const resultFilter = document.getElementById('resultFilter');
+const dateFilter = document.getElementById('dateFilter');
+const toast = document.getElementById('toast');
+
+// === Toast ===
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// === 登入 ===
+async function login(pw) {
+  loginError.textContent = '';
+  if (!pw) {
+    loginError.textContent = '請輸入密碼';
+    return;
+  }
+  if (!SHEETS_ENDPOINT) {
+    loginError.textContent = '⚠️ 尚未設定 Apps Script Endpoint，無法連線到資料庫';
+    return;
+  }
+
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = '<span class="spinner"></span>驗 證 中';
+
+  try {
+    const url = `${SHEETS_ENDPOINT}?action=list&password=${encodeURIComponent(pw)}`;
+    const r = await fetch(url, { method: 'GET' });
+    const data = await r.json();
+
+    if (data.ok) {
+      adminPw = pw;
+      sessionStorage.setItem('yl_admin_pw', pw);
+      allRecords = data.records || [];
+      enterDashboard();
+    } else {
+      loginError.textContent = data.error === 'unauthorized' ? '密碼錯誤' : ('連線失敗: ' + data.error);
+    }
+  } catch (e) {
+    loginError.textContent = '連線失敗，請檢查 Endpoint 設定 ('+ e.message +')';
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = '登 入';
+  }
+}
+
+loginBtn.addEventListener('click', () => login(pwInput.value));
+pwInput.addEventListener('keypress', e => { if (e.key === 'Enter') login(pwInput.value); });
+
+// 自動登入(若 sessionStorage 已有密碼)
+if (adminPw && SHEETS_ENDPOINT) {
+  login(adminPw);
+}
+
+// === 進入後台 ===
+function enterDashboard() {
+  loginWrap.style.display = 'none';
+  dashWrap.classList.add('active');
+  pwInput.value = '';
+  applyFiltersAndRender();
+}
+
+// === 搜尋 / 篩選 ===
+function matchesFilters(r) {
+  // 搜尋
+  const q = searchInput.value.trim().toLowerCase();
+  if (q) {
+    const blob = [r.name, r.question, r.finalGrade, r.birthday].join(' ').toLowerCase();
+    if (!blob.includes(q)) return false;
+  }
+  // 結果
+  if (resultFilter.value && r.finalResult !== resultFilter.value) return false;
+  // 日期
+  if (dateFilter.value) {
+    const ts = new Date(r.timestamp);
+    const now = new Date();
+    if (dateFilter.value === 'today') {
+      if (ts.toDateString() !== now.toDateString()) return false;
+    } else if (dateFilter.value === '7d') {
+      if (now - ts > 7 * 86400000) return false;
+    } else if (dateFilter.value === '30d') {
+      if (now - ts > 30 * 86400000) return false;
+    }
+  }
+  return true;
+}
+
+function sortRecords(records) {
+  const f = currentSort.field;
+  const dir = currentSort.dir === 'asc' ? 1 : -1;
+  return [...records].sort((a, b) => {
+    let av = a[f], bv = b[f];
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av === bv) return 0;
+    return (av > bv ? 1 : -1) * dir;
+  });
+}
+
+function applyFiltersAndRender() {
+  filteredRecords = sortRecords(allRecords.filter(matchesFilters));
+  renderStats();
+  renderTable();
+  filterCount.textContent = `${filteredRecords.length} 筆 / 共 ${allRecords.length} 筆`;
+}
+
+// === 摘要卡 ===
+function renderStats() {
+  const records = filteredRecords;
+  const total = records.length;
+  const today = new Date().toDateString();
+  const todayCount = records.filter(r => new Date(r.timestamp).toDateString() === today).length;
+  const success = records.filter(r => r.finalResult === 'success').length;
+  const blocked = records.filter(r => r.finalResult === 'blocked').length;
+  const abandoned = records.filter(r => r.finalResult === 'abandoned').length;
+  const lineClicks = records.filter(r => String(r.lineClicked).toUpperCase() === 'TRUE' || r.lineClicked === true).length;
+  const shares = records.filter(r => String(r.shared).toUpperCase() === 'TRUE' || r.shared === true).length;
+  const avgDuration = total ? Math.round(records.reduce((s, r) => s + (Number(r.durationSeconds) || 0), 0) / total) : 0;
+
+  const fmt = secs => {
+    if (secs < 60) return secs + ' 秒';
+    return Math.floor(secs / 60) + ' 分 ' + (secs % 60) + ' 秒';
+  };
+  const pct = (n, d) => d ? ((n / d * 100).toFixed(1) + '%') : '—';
+
+  statsGrid.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">今 日 訪 客</div>
+      <div class="stat-value">${todayCount}</div>
+      <div class="stat-sub">總計 ${total} 筆</div>
+    </div>
+    <div class="stat-card highlight">
+      <div class="stat-label">三 聖 筊 達 成</div>
+      <div class="stat-value">${success}</div>
+      <div class="stat-sub">${pct(success, total)} 成功率</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">月 老 阻 礙</div>
+      <div class="stat-value">${blocked}</div>
+      <div class="stat-sub">${pct(blocked, total)} 比例</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">中 途 離 開</div>
+      <div class="stat-value">${abandoned}</div>
+      <div class="stat-sub">${pct(abandoned, total)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">L I N E 點 擊</div>
+      <div class="stat-value">${lineClicks}</div>
+      <div class="stat-sub">${pct(lineClicks, total)} 加入率</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">分 享 數</div>
+      <div class="stat-value">${shares}</div>
+      <div class="stat-sub">${pct(shares, total)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">平 均 停 留</div>
+      <div class="stat-value" style="font-size:1.3rem">${fmt(avgDuration)}</div>
+      <div class="stat-sub">所有訪客</div>
+    </div>
+  `;
+}
+
+// === 表格 ===
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderTable() {
+  if (!filteredRecords.length) {
+    recordsBody.innerHTML = '<tr><td colspan="10" class="empty-state"><div class="empty-state-icon">📭</div>沒有符合條件的紀錄</td></tr>';
+    return;
+  }
+
+  recordsBody.innerHTML = filteredRecords.map(r => {
+    const ts = r.timestamp ? new Date(r.timestamp) : null;
+    const tsStr = ts ? `${ts.getMonth()+1}/${ts.getDate()} ${String(ts.getHours()).padStart(2,'0')}:${String(ts.getMinutes()).padStart(2,'0')}` : '';
+    const tsFull = ts ? ts.toLocaleString('zh-TW') : '';
+
+    let resultBadge = '';
+    if (r.finalResult === 'success') resultBadge = '<span class="badge badge-success">三聖筊</span>';
+    else if (r.finalResult === 'blocked') resultBadge = '<span class="badge badge-blocked">阻礙</span>';
+    else resultBadge = '<span class="badge badge-abandoned">離開</span>';
+
+    const lineYes = String(r.lineClicked).toUpperCase() === 'TRUE' || r.lineClicked === true;
+    const sharedYes = String(r.shared).toUpperCase() === 'TRUE' || r.shared === true;
+
+    const dur = Number(r.durationSeconds) || 0;
+    const durStr = dur < 60 ? dur + 's' : Math.floor(dur/60) + 'm' + (dur%60) + 's';
+
+    return `<tr>
+      <td title="${escapeHtml(tsFull)}">${escapeHtml(tsStr)}</td>
+      <td><strong>${escapeHtml(r.name)}</strong></td>
+      <td>${escapeHtml(r.birthday)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(r.question)}">${escapeHtml(r.question)}</td>
+      <td>${resultBadge}</td>
+      <td>${escapeHtml(r.finalGrade || '—')}</td>
+      <td>${escapeHtml(r.attempts || 0)}</td>
+      <td>${escapeHtml(durStr)}</td>
+      <td>${lineYes ? '<span class="badge badge-yes">是</span>' : '<span class="badge badge-no">—</span>'}</td>
+      <td>${sharedYes ? '<span class="badge badge-yes">是</span>' : '<span class="badge badge-no">—</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// === 排序 ===
+document.querySelectorAll('th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const field = th.dataset.sort;
+    if (currentSort.field === field) {
+      currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      currentSort.field = field;
+      currentSort.dir = 'desc';
+    }
+    document.querySelectorAll('th').forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
+    th.classList.add(currentSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+    applyFiltersAndRender();
+  });
+});
+
+// === 篩選器 ===
+[searchInput, resultFilter, dateFilter].forEach(el => {
+  el.addEventListener('input', applyFiltersAndRender);
+});
+
+// === 重新載入 ===
+document.getElementById('refreshBtn').addEventListener('click', async () => {
+  if (!adminPw) return;
+  try {
+    const url = `${SHEETS_ENDPOINT}?action=list&password=${encodeURIComponent(adminPw)}&_=${Date.now()}`;
+    const r = await fetch(url);
+    const data = await r.json();
+    if (data.ok) {
+      allRecords = data.records || [];
+      applyFiltersAndRender();
+      showToast('已更新');
+    } else {
+      showToast('讀取失敗');
+    }
+  } catch (e) { showToast('連線失敗'); }
+});
+
+// === 匯出 CSV ===
+document.getElementById('exportBtn').addEventListener('click', () => {
+  if (!filteredRecords.length) { showToast('沒有資料可匯出'); return; }
+
+  const headers = ['時間', '姓名', '生日', '所問', '結果', '籤詩', '擲筊輪次', '停留秒數', 'LINE 點擊', '分享'];
+  const rows = filteredRecords.map(r => [
+    r.timestamp || '',
+    r.name || '',
+    r.birthday || '',
+    r.question || '',
+    r.finalResult || '',
+    r.finalGrade || '',
+    r.attempts || 0,
+    r.durationSeconds || 0,
+    String(r.lineClicked).toUpperCase() === 'TRUE' || r.lineClicked === true ? 'YES' : '',
+    String(r.shared).toUpperCase() === 'TRUE' || r.shared === true ? 'YES' : ''
+  ]);
+
+  const csv = [headers, ...rows]
+    .map(row => row.map(cell => {
+      const s = String(cell == null ? '' : cell);
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }).join(','))
+    .join('\n');
+
+  // BOM for Excel UTF-8 support
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `yuelao-records-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('已匯出 ' + filteredRecords.length + ' 筆');
+});
+
+// === 登出 ===
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('yl_admin_pw');
+  adminPw = '';
+  allRecords = [];
+  filteredRecords = [];
+  loginWrap.style.display = 'flex';
+  dashWrap.classList.remove('active');
+  pwInput.focus();
+});
+</script>
+</body>
+</html>
