@@ -318,6 +318,8 @@ tbody tr:last-child td { border-bottom: none; }
     <input type="password" class="login-input" id="pwInput" placeholder="••••••••" autocomplete="off" autofocus>
     <button class="login-btn" id="loginBtn">登 入</button>
     <div class="login-error" id="loginError"></div>
+    <button id="diagBtn" style="width:100%;padding:8px;margin-top:10px;border:1px dashed #d1d5db;background:white;color:#6b7280;font-size:0.78rem;border-radius:8px;cursor:pointer;">🔧 連線診斷</button>
+    <pre id="diagOutput" style="display:none;margin-top:10px;font-size:0.7rem;background:#0f172a;color:#a3e635;padding:10px;border-radius:8px;white-space:pre-wrap;word-wrap:break-word;max-height:300px;overflow:auto;text-align:left;font-family:monospace;"></pre>
   </div>
 </div>
 
@@ -426,26 +428,99 @@ async function sha256Hex(text) {
 }
 
 // 從 KVdb 載入所有客戶記錄
+// KVdb 的列表 API 有時回傳 NDJSON,有時回傳 tab-separated text,做容錯解析
 async function loadAllRecords() {
-  const url = KVDB_BASE + '/?values=true&format=json';
+  // 試 ?values=true (預設 NDJSON / tab-separated)
+  const url = KVDB_BASE + '/?values=true&limit=1000';
   const r = await fetch(url);
   if (!r.ok) {
-    if (r.status === 404) return [];  // bucket 還沒任何資料
-    throw new Error('HTTP ' + r.status);
+    if (r.status === 404) return [];
+    throw new Error('HTTP ' + r.status + ' (列表失敗)');
   }
-  const data = await r.json();
-  // KVdb 回傳格式: { "key1": "value1", "key2": "value2", ... }
-  // value 是 JSON 字串(我們存的 payload)
+  const text = await r.text();
+  if (!text || !text.trim()) return [];
+  
   const records = [];
-  for (const k in data) {
+  const lines = text.split('\n');
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    let valuePart = line;
+    // 格式 1: tab 分隔 "key\tvalue"
+    const tabIdx = line.indexOf('\t');
+    if (tabIdx > 0) {
+      valuePart = line.substring(tabIdx + 1);
+    }
+    // 嘗試解析為 JSON
     try {
-      const obj = typeof data[k] === 'string' ? JSON.parse(data[k]) : data[k];
-      records.push(obj);
-    } catch (e) { /* ignore broken records */ }
+      const obj = JSON.parse(valuePart);
+      if (obj && typeof obj === 'object' && obj.timestamp) {
+        records.push(obj);
+      }
+    } catch (e) {
+      // 也試試把整行當 JSON
+      try {
+        const obj2 = JSON.parse(line);
+        if (obj2 && typeof obj2 === 'object' && obj2.timestamp) {
+          records.push(obj2);
+        }
+      } catch(e2) {}
+    }
   }
-  // 依時間戳遞減排序
   records.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
   return records;
+}
+
+// === 診斷工具:測試讀寫連線 ===
+async function runDiagnostics() {
+  const out = document.getElementById('diagOutput');
+  out.style.display = 'block';
+  out.textContent = '正在測試...';
+  let log = '';
+  
+  // 1. 寫入測試
+  const testKey = 'diag-' + Date.now();
+  const testPayload = { timestamp: new Date().toISOString(), name: '__DIAG__', question: 'test', finalResult: 'success' };
+  log += '【1】寫入測試 (POST)\n';
+  log += '   URL: ' + KVDB_BASE + '/' + testKey + '\n';
+  try {
+    const r = await fetch(KVDB_BASE + '/' + testKey, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testPayload)
+    });
+    log += '   狀態: ' + r.status + ' ' + r.statusText + '\n';
+    const txt = await r.text();
+    log += '   回應: ' + (txt.substring(0, 100) || '(空)') + '\n\n';
+  } catch (e) {
+    log += '   ❌ 失敗: ' + e.message + '\n\n';
+  }
+  
+  // 2. 讀取單一 key
+  log += '【2】讀回剛才寫的測試資料 (GET 單一 key)\n';
+  log += '   URL: ' + KVDB_BASE + '/' + testKey + '\n';
+  try {
+    const r = await fetch(KVDB_BASE + '/' + testKey);
+    log += '   狀態: ' + r.status + ' ' + r.statusText + '\n';
+    const txt = await r.text();
+    log += '   回應 (前 200 字): ' + (txt.substring(0, 200) || '(空)') + '\n\n';
+  } catch (e) {
+    log += '   ❌ 失敗: ' + e.message + '\n\n';
+  }
+  
+  // 3. 列表所有 keys
+  log += '【3】列表所有 keys (GET ?values=true)\n';
+  log += '   URL: ' + KVDB_BASE + '/?values=true&limit=10\n';
+  try {
+    const r = await fetch(KVDB_BASE + '/?values=true&limit=10');
+    log += '   狀態: ' + r.status + ' ' + r.statusText + '\n';
+    log += '   Content-Type: ' + r.headers.get('content-type') + '\n';
+    const txt = await r.text();
+    log += '   回應 (前 500 字):\n' + (txt.substring(0, 500) || '(空)') + '\n';
+  } catch (e) {
+    log += '   ❌ 失敗: ' + e.message + '\n';
+  }
+  
+  out.textContent = log;
 }
 
 async function login(pw) {
@@ -480,6 +555,7 @@ async function login(pw) {
 }
 
 loginBtn.addEventListener('click', () => login(pwInput.value));
+document.getElementById('diagBtn').addEventListener('click', runDiagnostics);
 pwInput.addEventListener('keypress', e => { if (e.key === 'Enter') login(pwInput.value); });
 
 // 自動登入(若 sessionStorage 已有密碼)
