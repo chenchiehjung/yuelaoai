@@ -65,26 +65,31 @@ body::before {
   font-size: 1.4rem; margin-bottom: 6px; letter-spacing: 0.1em;
 }
 .admin-flower {
-  display: inline-block;
-  font-size: 1.7rem;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.4rem;
   color: var(--pink-400);
-  margin: 4px 0 8px;
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  opacity: 0.95;
-  text-shadow: 0 1px 3px rgba(255, 168, 192, 0.4);
+  opacity: 0.55;
+  text-shadow: 0 1px 3px rgba(255, 168, 192, 0.3);
+  padding: 6px 10px;
+  z-index: 50;
   animation: flowerPulse 4s ease-in-out infinite;
-  transition: transform 0.15s;
-  padding: 2px 6px;
+  transition: opacity 0.2s;
 }
+.admin-flower:hover { opacity: 0.9; }
 .admin-flower:active {
-  transform: scale(0.85);
+  animation: none;
+  transform: translateX(-50%) scale(0.85);
 }
 @keyframes flowerPulse {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(15deg); }
+  0%, 100% { transform: translateX(-50%) rotate(-8deg); }
+  50% { transform: translateX(-50%) rotate(8deg); }
 }
 .title {
   font-weight: 900; font-size: clamp(2.6rem, 8vw, 4.2rem);
@@ -1087,7 +1092,6 @@ body::before {
 <div class="container">
   <header class="header">
     <div class="header-cute">~ welcome to the shrine ~</div>
-    <div class="admin-flower" id="adminFlower" aria-hidden="true">🌸</div>
     <h1 class="title">緣分籤詩</h1>
     <p class="subtitle">擲 筊 問 月 老</p>
   </header>
@@ -3573,5 +3577,8 @@ document.getElementById('questionInput').addEventListener('keypress', function(e
   if (e.key === 'Enter') submitBtn.click();
 });
 </script>
+<!-- 隱藏管理員入口:固定在頁面底部的小花 -->
+<div class="admin-flower" id="adminFlower" aria-hidden="true">🌸</div>
+
 </body>
 </html>
