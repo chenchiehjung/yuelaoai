@@ -774,6 +774,22 @@ body::before {
   color: #6b3e80;
   border: 1px solid rgba(184, 141, 208, 0.4);
 }
+.poem-journey-note {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-light);
+  margin-top: -8px;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  background: rgba(245, 185, 66, 0.08);
+  border-left: 2px solid var(--gold-soft);
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+.poem-journey-note strong {
+  color: var(--gold);
+  font-weight: 800;
+}
 .poem-echo {
   text-align: center;
   font-size: 0.88rem;
@@ -1428,7 +1444,7 @@ body::before {
     <div style="background: linear-gradient(135deg, rgba(212, 165, 232, 0.12), rgba(255, 168, 192, 0.15)); border-radius:20px; padding:18px 20px; margin:20px 0; text-align:center; border:1px dashed var(--lavender);">
       <div style="font-size:1.1rem; font-weight:900; color:var(--rose-deep); margin-bottom:10px; letter-spacing:0.2em;">🌸 月 老 嘆 息 🌸</div>
       <div style="font-size:0.95rem; line-height:2; color:var(--text); font-weight:500;">
-        已 <strong style="color:var(--rose);">連續五次</strong> 未得三聖筊<br>
+        已 <strong style="color:var(--rose);">連續五次</strong> 未能連得三聖筊<br>
         代表所問之事 <strong style="color:var(--rose);">阻礙較多</strong><br>
         目前緣分 <strong style="color:var(--rose);">尚未具足</strong><br>
         <span style="font-size:0.85rem; opacity:0.85; display:block; margin-top:8px;">
@@ -2162,7 +2178,7 @@ function getHistoryContext(history) {
   } else if (total === 3) {
     if (yin === 3) line = '📿 三輪皆陰 此事阻力較重 須先化解';
     else if (xiao === 3) line = '📿 三輪皆笑 月老在等您靜心後再問';
-    else if (totalSheng >= 3) line = '📿 已得 ' + totalSheng + ' 聖筊 但屢屢中斷 心仍不夠專一';
+    else if (totalSheng >= 3) line = '📿 中途累計擲出 ' + totalSheng + ' 個聖筊 但屢屢被打斷 心仍不夠專一';
     else line = '📿 三輪未中 心緒不穩 請先沉澱';
   } else if (total === 4) {
     line = '📿 已四輪未中 將請您「香爐淨念」再擲';
@@ -3318,7 +3334,7 @@ async function doToss() {
     // 第 2 輪失敗 → 跳香爐祈求
     else if (consecutiveFail === 2) {
       const msgEl = document.getElementById('incenseMessage');
-      msgEl.innerHTML = '已連續兩輪未得三聖筊<br>月老希望您 <span class="em">先靜下心</span><br>雙手合十 <span class="em">默念三次</span> 您所求之事<br>讓真誠隨香煙上達月老';
+      msgEl.innerHTML = '已連續兩輪 <span class="em">未能連得三聖筊</span><br>月老希望您 <span class="em">先靜下心</span><br>雙手合十 <span class="em">默念三次</span> 您所求之事<br>讓真誠隨香煙上達月老';
       document.getElementById('incenseModal').classList.add('show');
     }
     // 第 4 輪失敗 → 跳拜拜彎腰互動 (彎腰偵測)
@@ -3378,10 +3394,22 @@ function buildHistorySummary(history) {
     else pattern = '陰 笑 各 半 ‧ 心 意 未 明';
   }
   
+  // 精確的紀錄文字 — 避免「總計聖筊」被誤讀為「達成」
+  // 中途的聖筊都「未連到三個就被打斷」,所以 tally 要寫清楚這一點
+  const tallyLine = '中 斷 ' + history.length + ' 輪 ‧ 陰 筊 <span class="hist-num">' + yinCount + 
+                    '</span> 次 ‧ 笑 筊 <span class="hist-num">' + xiaoCount + '</span> 次';
+  let shengLine = '';
+  if (totalSheng > 0) {
+    shengLine = '<div class="history-tally" style="font-size:0.72rem;color:var(--text-light);">' +
+                '中 途 曾 擲 出 <span class="hist-num">' + totalSheng + '</span> 次 聖 筊 ' +
+                '(均 未 連 到 三 個 即 被 打 斷)</div>';
+  }
+  
   return '<div class="history-summary">' +
     '<div class="history-title">📜 歷 次 擲 筊 紀 錄</div>' +
     '<div class="history-seq">' + seqParts + '</div>' +
-    '<div class="history-tally">陰 筊 <span class="hist-num">' + yinCount + '</span> 次 ‧ 笑 筊 <span class="hist-num">' + xiaoCount + '</span> 次 ‧ 共 得 聖 筊 <span class="hist-num">' + totalSheng + '</span> 次</div>' +
+    '<div class="history-tally">' + tallyLine + '</div>' +
+    shengLine +
     (pattern ? '<div class="history-pattern">' + pattern + '</div>' : '') +
     '</div>';
 }
@@ -3523,21 +3551,48 @@ function showPoem() {
   trackEvent('poem_shown', { grade: poem.grade, number: poem.number });
   sendSessionToSheets('poem-shown');
   
-  // === 客製化:依擲筊歷程的艱辛度 給不同的開場 ===
-  const failures = (typeof tossHistory !== 'undefined' && tossHistory) ? tossHistory.length : 0;
+  // === 客製化:依擲筊歷程的艱辛度 + 陰陽分佈 給不同的開場 ===
+  const hist = (typeof tossHistory !== 'undefined' && tossHistory) ? tossHistory : [];
+  const failures = hist.length;
+  const yinCnt = hist.filter(function(h){return h.result==='yin';}).length;
+  const xiaoCnt = hist.filter(function(h){return h.result==='xiao';}).length;
+  const midSheng = hist.reduce(function(s,h){return s+(h.sheng||0);}, 0);
+  const tone = (yinCnt > xiaoCnt) ? 'yin' : (xiaoCnt > yinCnt ? 'xiao' : 'mix');
+  
   let journeyHTML = '';
   if (failures === 0) {
-    journeyHTML = '<div class="poem-journey poem-journey-easy">✦ 一 氣 呵 成 三 聖 即 得 ✦<br><span>此乃緣分順遂之兆 月老欣然應允</span></div>';
+    journeyHTML = '<div class="poem-journey poem-journey-easy">✦ 一 氣 呵 成 三 聖 即 得 ✦<br><span>此乃 <strong>緣分順遂</strong> 之兆 月老欣然應允</span></div>';
   } else if (failures === 1) {
-    journeyHTML = '<div class="poem-journey poem-journey-mid">✦ 一 試 而 得 ✦<br><span>月老歷一念而後應允</span></div>';
+    if (tone === 'yin') {
+      journeyHTML = '<div class="poem-journey poem-journey-mid">✦ 一 度 月 老 保 留 而 後 應 允 ✦<br><span>月老起初有所遲疑 但聽見您的誠心</span></div>';
+    } else {
+      journeyHTML = '<div class="poem-journey poem-journey-mid">✦ 一 試 而 得 ✦<br><span>月老試心一回 隨即應允</span></div>';
+    }
   } else if (failures === 2) {
-    journeyHTML = '<div class="poem-journey poem-journey-mid">✦ 二 度 轉 念 終 得 三 聖 ✦<br><span>月老在您靜心後給予指引</span></div>';
+    if (tone === 'yin') {
+      journeyHTML = '<div class="poem-journey poem-journey-mid">✦ 二 度 保 留 後 終 予 指 引 ✦<br><span>月老反覆思量 您的誠心終獲應允</span></div>';
+    } else if (tone === 'xiao') {
+      journeyHTML = '<div class="poem-journey poem-journey-mid">✦ 月 老 二 度 試 心 終 予 應 允 ✦<br><span>連兩次笑筊 是月老試您是否真心</span></div>';
+    } else {
+      journeyHTML = '<div class="poem-journey poem-journey-mid">✦ 二 度 轉 念 終 得 三 聖 ✦<br><span>月老在您靜心後給予指引</span></div>';
+    }
   } else if (failures === 3) {
-    journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 經 三 次 沉 澱 終 得 應 允 ✦<br><span>誠心打動月老 此籤值得珍視</span></div>';
+    if (tone === 'yin') {
+      journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 月 老 三 度 沉 思 後 應 允 ✦<br><span>此事原有阻礙 您的誠心化解了月老的顧慮</span></div>';
+    } else if (tone === 'xiao') {
+      journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 月 老 三 試 真 心 後 應 允 ✦<br><span>三度笑筊試您決心 您終以真心打動</span></div>';
+    } else {
+      journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 經 三 次 沉 澱 終 得 應 允 ✦<br><span>誠心打動月老 此籤值得珍視</span></div>';
+    }
   } else if (failures === 4) {
-    journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 歷 香 爐 淨 念 終 得 三 聖 ✦<br><span>至誠感動月老 此籤得來不易</span></div>';
+    journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 歷 香 爐 淨 念 終 得 三 聖 ✦<br><span>誠心隨煙上達 至誠感動月老<br>此籤得來不易</span></div>';
   } else {
     journeyHTML = '<div class="poem-journey poem-journey-hard">✦ 經 香 爐 淨 念 與 虔 心 鞠 躬 ✦<br><span>歷經考驗 月老終予應允<br>此籤得來不易 請務必珍重</span></div>';
+  }
+  
+  // 若中途有累計聖筊但屢被打斷,加一行「過程點評」
+  if (failures >= 2 && midSheng >= 2) {
+    journeyHTML += '<div class="poem-journey-note">過程中曾擲出 <strong>' + midSheng + '</strong> 個中途聖筊 ‧ 雖屢屢被陰陽筊打斷 終得月老首肯</div>';
   }
   
   // 把問題回音也帶入(讓客戶看到月老針對「他的問題」回應)
